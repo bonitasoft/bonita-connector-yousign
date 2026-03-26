@@ -375,6 +375,48 @@
 				<artifactId>jacoco-maven-plugin</artifactId>
 			</plugin>
 			<plugin>
+				<groupId>org.pitest</groupId>
+				<artifactId>pitest-maven</artifactId>
+				<version>1.17.4</version>
+				<configuration>
+					<targetClasses>
+						<param>com.bonitasoft.connectors.yousign.*</param>
+					</targetClasses>
+					<targetTests>
+						<param>com.bonitasoft.connectors.yousign.*Test</param>
+					</targetTests>
+					<excludedClasses>
+						<param>com.bonitasoft.connectors.yousign.YousignConfiguration</param>
+						<param>com.bonitasoft.connectors.yousign.YousignConfiguration$*</param>
+					</excludedClasses>
+					<excludedTestClasses>
+						<param>com.bonitasoft.connectors.yousign.*IntegrationTest</param>
+						<param>com.bonitasoft.connectors.yousign.*IT</param>
+						<param>com.bonitasoft.connectors.yousign.*PropertyTest</param>
+						<param>com.bonitasoft.connectors.yousign.ConnectorTestToolkit</param>
+					</excludedTestClasses>
+					<avoidCallsTo>
+						<avoidCallsTo>org.slf4j</avoidCallsTo>
+						<avoidCallsTo>lombok</avoidCallsTo>
+					</avoidCallsTo>
+					<mutators>
+						<mutator>DEFAULTS</mutator>
+					</mutators>
+					<outputFormats>
+						<param>HTML</param>
+						<param>CSV</param>
+					</outputFormats>
+					<timestampedReports>false</timestampedReports>
+				</configuration>
+				<dependencies>
+					<dependency>
+						<groupId>org.pitest</groupId>
+						<artifactId>pitest-junit5-plugin</artifactId>
+						<version>1.2.1</version>
+					</dependency>
+				</dependencies>
+			</plugin>
+			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-source-plugin</artifactId>
 				<version>${maven-source-plugin.version}</version>
