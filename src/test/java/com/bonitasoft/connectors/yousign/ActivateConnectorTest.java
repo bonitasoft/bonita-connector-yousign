@@ -148,6 +148,7 @@ class ActivateConnectorTest {
         inputs.put("signatureRequestId", "  ");
         connector.setInputParameters(inputs);
         assertThatThrownBy(() -> connector.validateInputParameters())
-                .isInstanceOf(ConnectorValidationException.class);
+                .isInstanceOf(ConnectorValidationException.class)
+                .hasMessageContaining("signatureRequestId is mandatory");
     }
 }

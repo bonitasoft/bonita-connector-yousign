@@ -143,4 +143,14 @@ class DownloadAuditTrailConnectorTest {
         assertThat(connector.getOutputs().get("success")).isEqualTo(false);
         assertThat(connector.getOutputs().get("errorMessage")).isNotNull();
     }
+
+    @Test
+    void should_fail_validation_when_signatureRequestId_is_blank() {
+        var inputs = validInputs();
+        inputs.put("signatureRequestId", "  ");
+        connector.setInputParameters(inputs);
+        assertThatThrownBy(() -> connector.validateInputParameters())
+                .isInstanceOf(ConnectorValidationException.class)
+                .hasMessageContaining("signatureRequestId is mandatory");
+    }
 }

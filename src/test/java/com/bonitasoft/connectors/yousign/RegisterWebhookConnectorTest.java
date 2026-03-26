@@ -134,4 +134,14 @@ class RegisterWebhookConnectorTest {
         assertThat(connector.getOutputs().get("success")).isEqualTo(false);
         assertThat(connector.getOutputs().get("errorMessage")).isNotNull();
     }
+
+    @Test
+    void should_fail_validation_when_webhookEndpointUrl_is_blank() {
+        var inputs = validInputs();
+        inputs.put("webhookEndpointUrl", "  ");
+        connector.setInputParameters(inputs);
+        assertThatThrownBy(() -> connector.validateInputParameters())
+                .isInstanceOf(ConnectorValidationException.class)
+                .hasMessageContaining("webhookEndpointUrl is mandatory");
+    }
 }
