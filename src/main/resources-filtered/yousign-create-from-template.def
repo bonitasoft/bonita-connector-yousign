@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definition:ConnectorDefinition
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:definition="http://www.bonitasoft.org/ns/connector/definition/6.1">
+
+  <id>${yousign-create-from-template.def.id}</id>
+  <version>${yousign-create-from-template.def.version}</version>
+  <icon>yousign-icon.png</icon>
+  <category icon="yousign-icon.png" id="Yousign"/>
+
+  <!-- Connection inputs -->
+  <input name="apiKey" type="java.lang.String" mandatory="true"/>
+  <input name="baseUrl" type="java.lang.String" mandatory="false" defaultValue="https://api-sandbox.yousign.app/v3"/>
+  <input name="connectTimeout" type="java.lang.Integer" mandatory="false" defaultValue="30000"/>
+  <input name="readTimeout" type="java.lang.Integer" mandatory="false" defaultValue="60000"/>
+
+  <!-- Operation inputs -->
+  <input name="requestName" type="java.lang.String" mandatory="true"/>
+  <input name="signerFirstName" type="java.lang.String" mandatory="true"/>
+  <input name="signerLastName" type="java.lang.String" mandatory="true"/>
+  <input name="signerEmail" type="java.lang.String" mandatory="true"/>
+  <input name="signerPhoneNumber" type="java.lang.String" mandatory="false"/>
+  <input name="templateTextFieldsJson" type="java.lang.String" mandatory="false"/>
+  <input name="additionalSignersJson" type="java.lang.String" mandatory="false"/>
+  <input name="externalId" type="java.lang.String" mandatory="false"/>
+
+  <!-- Configuration inputs -->
+  <input name="templateId" type="java.lang.String" mandatory="true"/>
+  <input name="signerLabel" type="java.lang.String" mandatory="true"/>
+  <input name="signerLocale" type="java.lang.String" mandatory="false" defaultValue="fr"/>
+  <input name="deliveryMode" type="java.lang.String" mandatory="false" defaultValue="email"/>
+  <input name="orderedSigners" type="java.lang.Boolean" mandatory="false" defaultValue="false"/>
+  <input name="expirationDate" type="java.lang.String" mandatory="false"/>
+
+  <!-- Outputs -->
+  <output name="signatureRequestId" type="java.lang.String"/>
+  <output name="status" type="java.lang.String"/>
+  <output name="success" type="java.lang.Boolean"/>
+  <output name="errorMessage" type="java.lang.String"/>
+
+  <!-- Pages -->
+  <page id="connectionPage">
+    <widget xsi:type="definition:Password" id="apiKeyWidget" inputName="apiKey"/>
+    <widget xsi:type="definition:Text" id="baseUrlWidget" inputName="baseUrl"/>
+    <widget xsi:type="definition:Text" id="connectTimeoutWidget" inputName="connectTimeout"/>
+    <widget xsi:type="definition:Text" id="readTimeoutWidget" inputName="readTimeout"/>
+  </page>
+  <page id="operationPage">
+    <widget xsi:type="definition:Text" id="requestNameWidget" inputName="requestName"/>
+    <widget xsi:type="definition:Text" id="signerFirstNameWidget" inputName="signerFirstName"/>
+    <widget xsi:type="definition:Text" id="signerLastNameWidget" inputName="signerLastName"/>
+    <widget xsi:type="definition:Text" id="signerEmailWidget" inputName="signerEmail"/>
+    <widget xsi:type="definition:Text" id="signerPhoneNumberWidget" inputName="signerPhoneNumber"/>
+    <widget xsi:type="definition:TextArea" id="templateTextFieldsJsonWidget" inputName="templateTextFieldsJson"/>
+    <widget xsi:type="definition:TextArea" id="additionalSignersJsonWidget" inputName="additionalSignersJson"/>
+    <widget xsi:type="definition:Text" id="externalIdWidget" inputName="externalId"/>
+  </page>
+  <page id="configurationPage">
+    <widget xsi:type="definition:Text" id="templateIdWidget" inputName="templateId"/>
+    <widget xsi:type="definition:Text" id="signerLabelWidget" inputName="signerLabel"/>
+    <widget xsi:type="definition:Select" id="signerLocaleWidget" inputName="signerLocale">
+      <items>fr</items>
+      <items>en</items>
+      <items>de</items>
+      <items>it</items>
+      <items>es</items>
+      <items>nl</items>
+      <items>pl</items>
+    </widget>
+    <widget xsi:type="definition:RadioGroup" id="deliveryModeWidget" inputName="deliveryMode">
+      <choices>email</choices>
+      <choices>none</choices>
+    </widget>
+    <widget xsi:type="definition:Checkbox" id="orderedSignersWidget" inputName="orderedSigners"/>
+    <widget xsi:type="definition:Text" id="expirationDateWidget" inputName="expirationDate"/>
+  </page>
+</definition:ConnectorDefinition>

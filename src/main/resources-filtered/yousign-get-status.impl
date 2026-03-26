@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<implementation:connectorImplementation xmlns:implementation="http://www.bonitasoft.org/ns/connector/implementation/6.0">
+  <implementationId>${yousign-get-status.impl.id}</implementationId>
+  <implementationVersion>${yousign-get-status.impl.version}</implementationVersion>
+  <definitionId>${yousign-get-status.def.id}</definitionId>
+  <definitionVersion>${yousign-get-status.def.version}</definitionVersion>
+  <implementationClassname>${yousign-get-status.main-class}</implementationClassname>
+  <hasSources>false</hasSources>
+  <description>Yousign eSignature Get Status connector implementation</description>
+
+<!-- retrieved from the pom.xml at build time -->
+${connector-dependencies}
+
+</implementation:connectorImplementation>

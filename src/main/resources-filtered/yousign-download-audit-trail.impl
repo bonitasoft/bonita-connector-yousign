@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<implementation:connectorImplementation xmlns:implementation="http://www.bonitasoft.org/ns/connector/implementation/6.0">
+  <implementationId>${yousign-download-audit-trail.impl.id}</implementationId>
+  <implementationVersion>${yousign-download-audit-trail.impl.version}</implementationVersion>
+  <definitionId>${yousign-download-audit-trail.def.id}</definitionId>
+  <definitionVersion>${yousign-download-audit-trail.def.version}</definitionVersion>
+  <implementationClassname>${yousign-download-audit-trail.main-class}</implementationClassname>
+  <hasSources>false</hasSources>
+  <description>Yousign eSignature Download Audit Trail connector implementation</description>
+
+<!-- retrieved from the pom.xml at build time -->
+${connector-dependencies}
+
+</implementation:connectorImplementation>

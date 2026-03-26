@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<implementation:connectorImplementation xmlns:implementation="http://www.bonitasoft.org/ns/connector/implementation/6.0">
+  <implementationId>${yousign-create-from-template.impl.id}</implementationId>
+  <implementationVersion>${yousign-create-from-template.impl.version}</implementationVersion>
+  <definitionId>${yousign-create-from-template.def.id}</definitionId>
+  <definitionVersion>${yousign-create-from-template.def.version}</definitionVersion>
+  <implementationClassname>${yousign-create-from-template.main-class}</implementationClassname>
+  <hasSources>false</hasSources>
+  <description>Yousign eSignature Create From Template connector implementation</description>
+
+<!-- retrieved from the pom.xml at build time -->
+${connector-dependencies}
+
+</implementation:connectorImplementation>

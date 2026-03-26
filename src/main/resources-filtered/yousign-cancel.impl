@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<implementation:connectorImplementation xmlns:implementation="http://www.bonitasoft.org/ns/connector/implementation/6.0">
+  <implementationId>${yousign-cancel.impl.id}</implementationId>
+  <implementationVersion>${yousign-cancel.impl.version}</implementationVersion>
+  <definitionId>${yousign-cancel.def.id}</definitionId>
+  <definitionVersion>${yousign-cancel.def.version}</definitionVersion>
+  <implementationClassname>${yousign-cancel.main-class}</implementationClassname>
+  <hasSources>false</hasSources>
+  <description>Yousign eSignature Cancel connector implementation</description>
+
+<!-- retrieved from the pom.xml at build time -->
+${connector-dependencies}
+
+</implementation:connectorImplementation>

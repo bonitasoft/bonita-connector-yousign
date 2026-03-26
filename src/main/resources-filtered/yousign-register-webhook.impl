@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<implementation:connectorImplementation xmlns:implementation="http://www.bonitasoft.org/ns/connector/implementation/6.0">
+  <implementationId>${yousign-register-webhook.impl.id}</implementationId>
+  <implementationVersion>${yousign-register-webhook.impl.version}</implementationVersion>
+  <definitionId>${yousign-register-webhook.def.id}</definitionId>
+  <definitionVersion>${yousign-register-webhook.def.version}</definitionVersion>
+  <implementationClassname>${yousign-register-webhook.main-class}</implementationClassname>
+  <hasSources>false</hasSources>
+  <description>Yousign eSignature Register Webhook connector implementation</description>
+
+<!-- retrieved from the pom.xml at build time -->
+${connector-dependencies}
+
+</implementation:connectorImplementation>

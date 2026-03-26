@@ -1,5 +1,5 @@
 name: Beta Feedback
-description: Report testing results for a beta connector operation
+description: Report testing results for a Yousign connector operation
 labels: ["beta-feedback"]
 body:
   - type: dropdown
@@ -8,8 +8,14 @@ body:
       label: Operation tested
       description: Which connector operation did you test?
       options:
-        - CHANGE_ME-operation-1
-        - CHANGE_ME-operation-2
+        - yousign-create-from-template
+        - yousign-activate
+        - yousign-get-status
+        - yousign-cancel
+        - yousign-download-document
+        - yousign-download-audit-trail
+        - yousign-list
+        - yousign-register-webhook
     validations:
       required: true
   - type: dropdown
@@ -36,7 +42,7 @@ body:
     attributes:
       label: Environment
       description: "Where was it tested? (e.g., customer project, internal lab, local dev)"
-      placeholder: "Customer project — Acme Corp"
+      placeholder: "Customer project"
     validations:
       required: true
   - type: input
@@ -44,7 +50,7 @@ body:
     attributes:
       label: Platform
       description: Bonita version, OS, Java version
-      placeholder: "Bonita 2024.3, Windows 11, Java 17"
+      placeholder: "Bonita 10.2.0, Windows 11, Java 17"
     validations:
       required: true
   - type: textarea

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definition:ConnectorDefinition
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:definition="http://www.bonitasoft.org/ns/connector/definition/6.1">
+
+  <id>${yousign-register-webhook.def.id}</id>
+  <version>${yousign-register-webhook.def.version}</version>
+  <icon>yousign-icon.png</icon>
+  <category icon="yousign-icon.png" id="Yousign"/>
+
+  <input name="apiKey" type="java.lang.String" mandatory="true"/>
+  <input name="baseUrl" type="java.lang.String" mandatory="false" defaultValue="https://api-sandbox.yousign.app/v3"/>
+  <input name="connectTimeout" type="java.lang.Integer" mandatory="false" defaultValue="30000"/>
+  <input name="readTimeout" type="java.lang.Integer" mandatory="false" defaultValue="60000"/>
+  <input name="webhookEndpointUrl" type="java.lang.String" mandatory="true"/>
+  <input name="subscribedEventsJson" type="java.lang.String" mandatory="false" defaultValue='["signature_request.done","signature_request.canceled","signature_request.declined","signer.done"]'/>
+  <input name="autoRetry" type="java.lang.Boolean" mandatory="false" defaultValue="true"/>
+  <input name="enabled" type="java.lang.Boolean" mandatory="false" defaultValue="true"/>
+  <input name="sandbox" type="java.lang.Boolean" mandatory="false" defaultValue="true"/>
+  <input name="webhookSecret" type="java.lang.String" mandatory="false"/>
+
+  <output name="webhookId" type="java.lang.String"/>
+  <output name="success" type="java.lang.Boolean"/>
+  <output name="errorMessage" type="java.lang.String"/>
+
+  <page id="connectionPage">
+    <widget xsi:type="definition:Password" id="apiKeyWidget" inputName="apiKey"/>
+    <widget xsi:type="definition:Text" id="baseUrlWidget" inputName="baseUrl"/>
+    <widget xsi:type="definition:Text" id="connectTimeoutWidget" inputName="connectTimeout"/>
+    <widget xsi:type="definition:Text" id="readTimeoutWidget" inputName="readTimeout"/>
+  </page>
+  <page id="operationPage">
+    <widget xsi:type="definition:Text" id="webhookEndpointUrlWidget" inputName="webhookEndpointUrl"/>
+    <widget xsi:type="definition:TextArea" id="subscribedEventsJsonWidget" inputName="subscribedEventsJson"/>
+    <widget xsi:type="definition:Checkbox" id="autoRetryWidget" inputName="autoRetry"/>
+    <widget xsi:type="definition:Checkbox" id="enabledWidget" inputName="enabled"/>
+  </page>
+  <page id="configurationPage">
+    <widget xsi:type="definition:Checkbox" id="sandboxWidget" inputName="sandbox"/>
+    <widget xsi:type="definition:Password" id="webhookSecretWidget" inputName="webhookSecret"/>
+  </page>
+</definition:ConnectorDefinition>

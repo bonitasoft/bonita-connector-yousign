@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<implementation:connectorImplementation xmlns:implementation="http://www.bonitasoft.org/ns/connector/implementation/6.0">
+  <implementationId>${yousign-activate.impl.id}</implementationId>
+  <implementationVersion>${yousign-activate.impl.version}</implementationVersion>
+  <definitionId>${yousign-activate.def.id}</definitionId>
+  <definitionVersion>${yousign-activate.def.version}</definitionVersion>
+  <implementationClassname>${yousign-activate.main-class}</implementationClassname>
+  <hasSources>false</hasSources>
+  <description>Yousign eSignature Activate connector implementation</description>
+
+<!-- retrieved from the pom.xml at build time -->
+${connector-dependencies}
+
+</implementation:connectorImplementation>

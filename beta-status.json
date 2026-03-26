@@ -1,0 +1,46 @@
+{
+  "connector": "bonita-connector-yousign",
+  "version": "1.0.0-beta.1",
+  "operations": {
+    "yousign-create-from-template": {
+      "status": "untested",
+      "issue": null,
+      "version": "1.0.0-beta.1"
+    },
+    "yousign-activate": {
+      "status": "untested",
+      "issue": null,
+      "version": "1.0.0-beta.1"
+    },
+    "yousign-get-status": {
+      "status": "untested",
+      "issue": null,
+      "version": "1.0.0-beta.1"
+    },
+    "yousign-cancel": {
+      "status": "untested",
+      "issue": null,
+      "version": "1.0.0-beta.1"
+    },
+    "yousign-download-document": {
+      "status": "untested",
+      "issue": null,
+      "version": "1.0.0-beta.1"
+    },
+    "yousign-download-audit-trail": {
+      "status": "untested",
+      "issue": null,
+      "version": "1.0.0-beta.1"
+    },
+    "yousign-list": {
+      "status": "untested",
+      "issue": null,
+      "version": "1.0.0-beta.1"
+    },
+    "yousign-register-webhook": {
+      "status": "untested",
+      "issue": null,
+      "version": "1.0.0-beta.1"
+    }
+  }
+}

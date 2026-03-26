@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definition:ConnectorDefinition
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:definition="http://www.bonitasoft.org/ns/connector/definition/6.1">
+
+  <id>${yousign-cancel.def.id}</id>
+  <version>${yousign-cancel.def.version}</version>
+  <icon>yousign-icon.png</icon>
+  <category icon="yousign-icon.png" id="Yousign"/>
+
+  <input name="apiKey" type="java.lang.String" mandatory="true"/>
+  <input name="baseUrl" type="java.lang.String" mandatory="false" defaultValue="https://api-sandbox.yousign.app/v3"/>
+  <input name="connectTimeout" type="java.lang.Integer" mandatory="false" defaultValue="30000"/>
+  <input name="readTimeout" type="java.lang.Integer" mandatory="false" defaultValue="60000"/>
+  <input name="signatureRequestId" type="java.lang.String" mandatory="true"/>
+  <input name="cancellationReason" type="java.lang.String" mandatory="false" defaultValue="Cancelled by Bonita process"/>
+
+  <output name="success" type="java.lang.Boolean"/>
+  <output name="errorMessage" type="java.lang.String"/>
+
+  <page id="connectionPage">
+    <widget xsi:type="definition:Password" id="apiKeyWidget" inputName="apiKey"/>
+    <widget xsi:type="definition:Text" id="baseUrlWidget" inputName="baseUrl"/>
+    <widget xsi:type="definition:Text" id="connectTimeoutWidget" inputName="connectTimeout"/>
+    <widget xsi:type="definition:Text" id="readTimeoutWidget" inputName="readTimeout"/>
+  </page>
+  <page id="operationPage">
+    <widget xsi:type="definition:Text" id="signatureRequestIdWidget" inputName="signatureRequestId"/>
+    <widget xsi:type="definition:TextArea" id="cancellationReasonWidget" inputName="cancellationReason"/>
+  </page>
+</definition:ConnectorDefinition>

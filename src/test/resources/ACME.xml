@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<organization:Organization xmlns:organization="http://documentation.bonitasoft.com/organization-xml-schema/1.1">
+  <customUserInfoDefinitions>
+    <customUserInfoDefinition>
+      <name>asdasdasd</name>
+      <description></description>
+    </customUserInfoDefinition>
+  </customUserInfoDefinitions>
+  <users>
+    <user userName="william.jobs">
+      <firstName>William</firstName>
+      <lastName>Jobs</lastName>
+      <title>Mr</title>
+      <jobTitle>Chief Executive Officer</jobTitle>
+      <personalData/>
+      <professionalData>
+        <email>william.jobs@acme.com</email>
+      </professionalData>
+      <metaDatas/>
+      <enabled>true</enabled>
+      <password encrypted="false">bpm</password>
+      <customUserInfoValues/>
+    </user>
+    <user userName="walter.bates">
+      <firstName>Walter</firstName>
+      <lastName>Bates</lastName>
+      <title>Mr</title>
+      <jobTitle>Human resources benefits</jobTitle>
+      <manager>william.jobs</manager>
+      <personalData/>
+      <professionalData>
+        <email>walter.bates@acme.com</email>
+      </professionalData>
+      <metaDatas/>
+      <enabled>true</enabled>
+      <password encrypted="false">bpm</password>
+      <customUserInfoValues/>
+    </user>
+  </users>
+  <roles>
+    <role name="member">
+      <displayName>Member</displayName>
+      <description></description>
+    </role>
+  </roles>
+  <groups>
+    <group name="acme">
+      <displayName>Acme</displayName>
+      <description>ACME organization</description>
+    </group>
+  </groups>
+  <memberships>
+    <membership>
+      <userName>william.jobs</userName>
+      <roleName>member</roleName>
+      <groupName>acme</groupName>
+    </membership>
+    <membership>
+      <userName>walter.bates</userName>
+      <roleName>member</roleName>
+      <groupName>acme</groupName>
+    </membership>
+  </memberships>
+</organization:Organization>
