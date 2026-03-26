@@ -1,0 +1,851 @@
+= Yousign eSignature connectors
+:description: Bonita connectors for the Yousign eSignature API v3. Create, manage, track, and download electronic signature requests directly from your Bonita processes.
+
+{description}
+
+The Bonita Yousign Connectors are available for **Bonita 10.2 Community (2024.3)** version and above.
+
+== Overview
+
+The Yousign connector provides 8 operations covering the complete electronic signature lifecycle:
+
+* **Create From Template** -- Creates a signature request from a pre-configured Yousign template
+* **Activate** -- Activates a signature request, sending email invitations to all signers
+* **Get Status** -- Retrieves the current status of a signature request and its signers
+* **Cancel** -- Cancels an active signature request with an optional reason
+* **Download Document** -- Downloads a single signed document or all documents as a ZIP archive
+* **Download Audit Trail** -- Downloads the legally binding audit trail PDF for a completed request
+* **List** -- Lists signature requests with filters (status, external ID) and cursor-based pagination
+* **Register Webhook** -- Registers a webhook endpoint to receive real-time Yousign event notifications
+
+=== Yousign signature request lifecycle
+
+A signature request follows this lifecycle:
+
+----
+draft --> approval --> ongoing --> done
+                         |
+                         +--> declined
+                         +--> canceled
+                         +--> expired
+----
+
+* **draft** -- The request has been created but not yet activated
+* **approval** -- The request is pending internal approval (if configured)
+* **ongoing** -- Signers have been invited and the request is awaiting signatures
+* **done** -- All signers have signed; documents are available for download
+* **declined** -- A signer has declined to sign
+* **canceled** -- The request was canceled by the initiator
+* **expired** -- The request passed its expiration date without completion
+
+=== Recommended process pattern
+
+The typical Bonita process flow for electronic signatures follows this pattern:
+
+----
+[Start] --> [Create From Template] --> [Activate] --> [Polling Loop / Webhook] --> [Get Status]
+                                                                                       |
+                                                          +-----(done)------> [Download Document] --> [Download Audit Trail] --> [End]
+                                                          +----(declined)---> [Handle Decline] --> [End]
+                                                          +----(canceled)---> [Handle Cancel] --> [End]
+                                                          +----(expired)----> [Handle Expiry] --> [End]
+----
+
+You can monitor progress using either:
+
+1. **Polling pattern** -- Use a timer-based loop with Get Status to check periodically
+2. **Webhook pattern** -- Register a webhook to receive instant notifications via a Bonita REST API extension
+
+== Getting started
+
+Add the connector as an extension dependency to your Bonita project. Import the `.jar` file via *Import from file* in Bonita Studio.
+
+=== Import into Bonita Studio
+
+1. Build the connector: `./mvnw install -DskipTests`
+2. In Bonita Studio, go to **Development > Connectors > Import connector...**
+3. Select the JAR file: `target/bonita-connector-yousign-1.0.0-beta.1.jar`
+4. The 8 Yousign operations will appear under the **Yousign** category
+
+=== Maven coordinates
+
+[source,xml]
+----
+<dependency>
+    <groupId>org.bonitasoft.connectors</groupId>
+    <artifactId>bonita-connector-yousign</artifactId>
+    <version>1.0.0-beta.1</version>
+</dependency>
+----
+
+=== Connection configuration (shared by all operations)
+
+All 8 operations share the same connection parameters on Page 1 (Connection).
+
+[caption=Connection parameters]
+|===
+|Parameter |Required |Description |Default
+
+|*apiKey*
+|Yes
+|Yousign API key (Bearer token). Entered via a Password widget for security.
+|--
+
+|*baseUrl*
+|No
+|Yousign API base URL. Use the sandbox URL for testing and the production URL for live signatures.
+|`https://api-sandbox.yousign.app/v3`
+
+|*connectTimeout*
+|No
+|HTTP connection timeout in milliseconds
+|`30000`
+
+|*readTimeout*
+|No
+|HTTP read timeout in milliseconds
+|`60000`
+|===
+
+=== Authentication setup
+
+Yousign uses **Bearer token authentication**. Each API call includes the API key in the `Authorization: Bearer <apiKey>` header.
+
+To obtain an API key:
+
+1. Sign up at https://yousign.com/
+2. Go to **Settings > API Keys** in the Yousign dashboard
+3. Create an API key for your environment (sandbox or production)
+
+IMPORTANT: The API key is treated as a secret. It is configured via a **Password** widget in Bonita Studio, which masks the value in the UI.
+
+=== Environment URLs
+
+[cols="1,2"]
+|===
+|Environment |Base URL
+
+|**Sandbox** (testing)
+|`https://api-sandbox.yousign.app/v3`
+
+|**Production** (live)
+|`https://api.yousign.app/v3`
+|===
+
+== Create From Template (`yousign-create-from-template`)
+
+Creates a new signature request based on a pre-configured Yousign template. The template defines the document(s), signature fields, and placeholders. This operation maps signers to template roles and fills template text fields.
+
+This is typically the first step in a signature workflow.
+
+=== Input parameters
+
+[caption=Inputs -- Page 2 (Template & Signer)]
+|===
+|Parameter |Required |Description |Default
+
+|*requestName*
+|Yes
+|Human-readable name for the signature request
+|--
+
+|*signerFirstName*
+|Yes
+|First name of the primary signer
+|--
+
+|*signerLastName*
+|Yes
+|Last name of the primary signer
+|--
+
+|*signerEmail*
+|Yes
+|Email address of the primary signer (receives the signing invitation)
+|--
+
+|*signerPhoneNumber*
+|No
+|Phone number of the primary signer (for SMS verification if enabled)
+|--
+
+|*templateTextFieldsJson*
+|No
+|JSON object with template placeholder values (TextArea widget). Example: `{"company_name": "ACME Corp", "contract_date": "2026-01-15"}`
+|--
+
+|*additionalSignersJson*
+|No
+|JSON array of additional signer objects (TextArea widget). Example: `[{"info": {"first_name": "Jane", "last_name": "Smith", "email": "jane@example.com"}, "label": "Manager"}]`
+|--
+
+|*externalId*
+|No
+|External reference ID for correlation with your Bonita process
+|--
+|===
+
+[caption=Inputs -- Page 3 (Configuration)]
+|===
+|Parameter |Required |Description |Default
+
+|*templateId*
+|Yes
+|UUID of the Yousign template to use
+|--
+
+|*signerLabel*
+|Yes
+|Label matching a signer role defined in the template (e.g., "Employee", "Manager")
+|--
+
+|*signerLocale*
+|No
+|Locale for signer notifications. Available: fr, en, de, it, es, nl, pl
+|`fr`
+
+|*deliveryMode*
+|No
+|How the signing invitation is delivered: `email` or `none`
+|`email`
+
+|*orderedSigners*
+|No
+|Whether signers must sign in order (sequential signing)
+|`false`
+
+|*expirationDate*
+|No
+|Expiration date for the request in ISO 8601 format (e.g., `2026-12-31T23:59:59+01:00`)
+|--
+|===
+
+=== Output parameters
+
+[caption=Outputs]
+|===
+|Parameter |Type |Description
+
+|*signatureRequestId*
+|String
+|UUID of the created signature request. Store this in a process variable for subsequent operations.
+
+|*status*
+|String
+|Initial status of the request (typically `draft`)
+
+|*success*
+|Boolean
+|`true` if the operation succeeded, `false` otherwise
+
+|*errorMessage*
+|String
+|Error details if `success` is `false`, `null` otherwise
+|===
+
+== Activate (`yousign-activate`)
+
+Activates a signature request that is in `draft` or `approval` status. Once activated, email invitations are sent to all signers and the status transitions to `ongoing`.
+
+This operation must be called after Create From Template to start the signing process.
+
+=== Input parameters
+
+[caption=Inputs -- Page 2 (Activate)]
+|===
+|Parameter |Required |Description |Default
+
+|*signatureRequestId*
+|Yes
+|UUID of the signature request to activate (obtained from Create From Template)
+|--
+|===
+
+=== Output parameters
+
+[caption=Outputs]
+|===
+|Parameter |Type |Description
+
+|*status*
+|String
+|New status after activation (typically `ongoing`)
+
+|*signerLinksJson*
+|String
+|JSON array with signer information and signing links
+
+|*success*
+|Boolean
+|`true` if the operation succeeded
+
+|*errorMessage*
+|String
+|Error details if `success` is `false`
+|===
+
+== Get Status (`yousign-get-status`)
+
+Retrieves the current status of a signature request, including individual signer statuses and document identifiers. Use this operation in a polling loop or after a webhook notification to check progress.
+
+=== Input parameters
+
+[caption=Inputs -- Page 2 (Status)]
+|===
+|Parameter |Required |Description |Default
+
+|*signatureRequestId*
+|Yes
+|UUID of the signature request to check
+|--
+|===
+
+=== Output parameters
+
+[caption=Outputs]
+|===
+|Parameter |Type |Description
+
+|*status*
+|String
+|Current status: `draft`, `approval`, `ongoing`, `done`, `declined`, `canceled`, `expired`
+
+|*signerStatusesJson*
+|String
+|JSON array with each signer's current status and details
+
+|*isTerminal*
+|Boolean
+|`true` if the status is terminal (`done`, `declined`, `canceled`, `expired`)
+
+|*signedDocumentIdsJson*
+|String
+|JSON array of document objects with their IDs (available when `done`)
+
+|*success*
+|Boolean
+|`true` if the operation succeeded
+
+|*errorMessage*
+|String
+|Error details if `success` is `false`
+|===
+
+== Cancel (`yousign-cancel`)
+
+Cancels an active signature request. Once canceled, signers can no longer sign. The status transitions to `canceled`. Only requests in `draft`, `approval`, or `ongoing` status can be canceled.
+
+=== Input parameters
+
+[caption=Inputs -- Page 2 (Cancel)]
+|===
+|Parameter |Required |Description |Default
+
+|*signatureRequestId*
+|Yes
+|UUID of the signature request to cancel
+|--
+
+|*cancellationReason*
+|No
+|Reason for cancellation (included in signer notifications)
+|`Cancelled by Bonita process`
+|===
+
+=== Output parameters
+
+[caption=Outputs]
+|===
+|Parameter |Type |Description
+
+|*success*
+|Boolean
+|`true` if the cancellation succeeded
+
+|*errorMessage*
+|String
+|Error details if `success` is `false`
+|===
+
+== Download Document (`yousign-download-document`)
+
+Downloads signed documents from a completed signature request. You can download a single document by ID or all documents as a ZIP archive. Documents are returned as Base64-encoded content for compatibility with Bonita document variables.
+
+=== Input parameters
+
+[caption=Inputs -- Page 2 (Download)]
+|===
+|Parameter |Required |Description |Default
+
+|*signatureRequestId*
+|Yes
+|UUID of the signature request
+|--
+
+|*documentId*
+|No
+|UUID of a specific document to download. Leave empty to download all documents as a ZIP archive.
+|--
+|===
+
+=== Output parameters
+
+[caption=Outputs]
+|===
+|Parameter |Type |Description
+
+|*documentContent*
+|String
+|Base64-encoded document content (PDF or ZIP)
+
+|*documentName*
+|String
+|Filename of the downloaded document
+
+|*contentType*
+|String
+|MIME type (e.g., `application/pdf`, `application/zip`)
+
+|*fileSizeBytes*
+|Long
+|File size in bytes
+
+|*success*
+|Boolean
+|`true` if the download succeeded
+
+|*errorMessage*
+|String
+|Error details if `success` is `false`
+|===
+
+== Download Audit Trail (`yousign-download-audit-trail`)
+
+Downloads the legally binding audit trail PDF for a completed signature request. The audit trail contains a detailed record of all actions taken during the signing process, including timestamps, IP addresses, and authentication methods.
+
+=== Input parameters
+
+[caption=Inputs -- Page 2 (Audit Trail)]
+|===
+|Parameter |Required |Description |Default
+
+|*signatureRequestId*
+|Yes
+|UUID of the signature request
+|--
+
+|*signerIdsJson*
+|No
+|JSON array of signer UUIDs to filter the audit trail (TextArea widget). Leave empty to download the full audit trail.
+|--
+|===
+
+=== Output parameters
+
+[caption=Outputs]
+|===
+|Parameter |Type |Description
+
+|*auditTrailContent*
+|String
+|Base64-encoded audit trail PDF content
+
+|*auditTrailName*
+|String
+|Filename of the audit trail PDF
+
+|*fileSizeBytes*
+|Long
+|File size in bytes
+
+|*success*
+|Boolean
+|`true` if the download succeeded
+
+|*errorMessage*
+|String
+|Error details if `success` is `false`
+|===
+
+== List (`yousign-list`)
+
+Lists signature requests with optional filtering and cursor-based pagination. Use this operation to build dashboards, search for requests by status, or find requests by external ID.
+
+=== Input parameters
+
+[caption=Inputs -- Page 2 (Query)]
+|===
+|Parameter |Required |Description |Default
+
+|*statusFilter*
+|No
+|Filter by status: `approval`, `ongoing`, `done`, `deleted`, `expired`, `canceled`, `declined`
+|--
+
+|*externalIdFilter*
+|No
+|Filter by external reference ID
+|--
+
+|*afterCursor*
+|No
+|Pagination cursor for the next page (obtained from a previous List call)
+|--
+|===
+
+[caption=Inputs -- Page 3 (Configuration)]
+|===
+|Parameter |Required |Description |Default
+
+|*pageSize*
+|No
+|Number of results per page (1-100)
+|`20`
+
+|*sortOrder*
+|No
+|Sort order by creation date: `desc` or `asc`
+|`desc`
+|===
+
+=== Output parameters
+
+[caption=Outputs]
+|===
+|Parameter |Type |Description
+
+|*signatureRequestsJson*
+|String
+|JSON array of signature request objects
+
+|*nextCursor*
+|String
+|Cursor for the next page (use as `afterCursor` in the next call). `null` if no more pages.
+
+|*hasMore*
+|Boolean
+|`true` if there are more pages to fetch
+
+|*success*
+|Boolean
+|`true` if the operation succeeded
+
+|*errorMessage*
+|String
+|Error details if `success` is `false`
+|===
+
+== Register Webhook (`yousign-register-webhook`)
+
+Registers a webhook endpoint to receive real-time notifications for Yousign events. This is the preferred alternative to polling for status updates. The webhook delivers HTTP POST requests to your endpoint when subscribed events occur.
+
+=== Input parameters
+
+[caption=Inputs -- Page 2 (Webhook)]
+|===
+|Parameter |Required |Description |Default
+
+|*webhookEndpointUrl*
+|Yes
+|HTTPS URL that will receive webhook events (must be publicly accessible)
+|--
+
+|*subscribedEventsJson*
+|No
+|JSON array of event types to subscribe to (TextArea widget)
+|`["signature_request.done","signature_request.canceled","signature_request.declined","signer.done"]`
+
+|*autoRetry*
+|No
+|Automatically retry failed webhook deliveries
+|`true`
+
+|*enabled*
+|No
+|Whether the webhook is active immediately after creation
+|`true`
+|===
+
+[caption=Inputs -- Page 3 (Security)]
+|===
+|Parameter |Required |Description |Default
+
+|*sandbox*
+|No
+|Whether this webhook is for the sandbox environment
+|`true`
+
+|*webhookSecret*
+|No
+|Secret key for verifying webhook payload signatures (HMAC). Entered via a Password widget.
+|--
+|===
+
+=== Output parameters
+
+[caption=Outputs]
+|===
+|Parameter |Type |Description
+
+|*webhookId*
+|String
+|UUID of the registered webhook
+
+|*success*
+|Boolean
+|`true` if the registration succeeded
+
+|*errorMessage*
+|String
+|Error details if `success` is `false`
+|===
+
+=== Available webhook events
+
+[cols="1,2"]
+|===
+|Event |Description
+
+|`signature_request.done`
+|All signers have signed
+
+|`signature_request.activated`
+|Request has been activated
+
+|`signature_request.canceled`
+|Request has been canceled
+
+|`signature_request.declined`
+|A signer declined to sign
+
+|`signature_request.expired`
+|Request has expired
+
+|`signer.done`
+|An individual signer has completed signing
+
+|`signer.notified`
+|A signer has been notified
+|===
+
+== Error handling
+
+All operations set `success=false` and populate `errorMessage` on failure. The connector never throws exceptions to the Bonita engine -- errors are always captured in the output parameters.
+
+[caption=HTTP error handling]
+|===
+|HTTP Code |Behavior
+
+|200/201
+|Success -- parse response and populate outputs
+
+|400
+|Fail immediately -- bad request (validation error in your input parameters)
+
+|401
+|Fail immediately -- authentication error (invalid or expired API key)
+
+|403
+|Fail immediately -- access denied (insufficient permissions)
+
+|404
+|Fail immediately -- resource not found (invalid UUID)
+
+|429
+|Retry up to 3 times with exponential backoff -- rate limit exceeded
+
+|500/502/503
+|Retry up to 3 times with exponential backoff -- server error
+|===
+
+The retry policy uses exponential backoff with jitter: base delays of 1s, 2s, 4s plus random jitter to prevent thundering herd.
+
+== Groovy code examples
+
+=== Polling loop for signature completion
+
+Use this pattern in a Bonita script task or connector output to poll until the signature request reaches a terminal state.
+
+[source,groovy]
+----
+// In a Bonita loop connector (timer: 30 seconds interval)
+// Check if the status is terminal to exit the loop
+def isTerminal = isTerminal // output from Get Status connector
+def status = status         // output from Get Status connector
+
+// Loop exit condition (set in the loop configuration)
+return isTerminal == true
+----
+
+=== Download and archive signed documents
+
+Use this in a Groovy script task after the signature is completed.
+
+[source,groovy]
+----
+// After Download Document connector, decode Base64 content to a Bonita document
+import java.util.Base64
+
+def documentContent = documentContent  // Base64 output from Download Document
+def documentName = documentName        // filename output
+
+// Decode and store as Bonita document
+byte[] decodedBytes = Base64.getDecoder().decode(documentContent)
+
+// Use Bonita API to attach as a document to the process
+apiAccessor.getProcessAPI().attachDocument(
+    processInstanceId,
+    documentName,
+    documentName,
+    contentType,      // e.g., "application/pdf"
+    decodedBytes
+)
+----
+
+=== Webhook payload verification
+
+If you set a webhook secret, verify incoming payloads in your Bonita REST API extension.
+
+[source,groovy]
+----
+import javax.crypto.Mac
+import javax.crypto.spec.SecretKeySpec
+
+def verifyWebhookSignature(String payload, String signature, String secret) {
+    def mac = Mac.getInstance("HmacSHA256")
+    mac.init(new SecretKeySpec(secret.getBytes("UTF-8"), "HmacSHA256"))
+    def computed = mac.doFinal(payload.getBytes("UTF-8")).encodeHex().toString()
+    return computed == signature
+}
+----
+
+== Process design patterns
+
+=== Pattern 1: Simple signature with polling
+
+----
+[Start] --> [Create From Template] --> [Activate] --> [Timer Loop]
+                                                          |
+                                                    [Get Status] ---(not terminal)---> [Wait 30s] --> [Get Status]
+                                                          |
+                                                      (terminal)
+                                                          |
+                                           +--- done --> [Download Document] --> [Download Audit Trail] --> [End]
+                                           +--- declined --> [Notify Initiator: Declined] --> [End]
+                                           +--- expired --> [Notify Initiator: Expired] --> [End]
+----
+
+=== Pattern 2: Webhook-based notification
+
+----
+[Start] --> [Register Webhook] --> [Create From Template] --> [Activate] --> [Wait for Signal]
+                                                                                   |
+                                                                           (webhook event)
+                                                                                   |
+                                                                            [Get Status] --> [Gateway]
+                                                                                                |
+                                                                    +--- done --> [Download] --> [Archive] --> [End]
+                                                                    +--- other --> [Handle] --> [End]
+----
+
+=== Pattern 3: Multi-signer sequential signing
+
+----
+[Start] --> [Create From Template (orderedSigners=true)] --> [Activate]
+                                                                |
+                                                          [Poll/Webhook Loop]
+                                                                |
+                                                          [Get Status]
+                                                                |
+                                                    (check signerStatusesJson)
+                                                                |
+                                                +--- all done --> [Download + Archive]
+                                                +--- partial --> [Continue waiting]
+                                                +--- declined --> [Cancel + Notify]
+----
+
+== Troubleshooting
+
+=== Common errors
+
+[cols="1,2,2"]
+|===
+|Error |Cause |Solution
+
+|`Authentication error: invalid API key`
+|The API key is invalid, expired, or for the wrong environment
+|Verify the key in the Yousign dashboard. Ensure sandbox keys are used with the sandbox URL and production keys with the production URL.
+
+|`Resource not found`
+|The signatureRequestId or documentId UUID does not exist
+|Verify the UUID is correct. Check that the resource has not been deleted.
+
+|`Bad request: invalid template`
+|The template ID is invalid or the signer label does not match any role in the template
+|Verify the template exists in your Yousign account. Check that the signerLabel exactly matches a role defined in the template.
+
+|`Rate limit exceeded`
+|Too many API calls in a short period
+|The connector automatically retries 3 times with exponential backoff. If the error persists, reduce polling frequency or increase the timer interval.
+
+|`Access denied`
+|The API key does not have sufficient permissions
+|Check the API key permissions in the Yousign dashboard. Ensure it has access to the required operations.
+|===
+
+=== Status transition errors
+
+[cols="1,2"]
+|===
+|Scenario |Explanation
+
+|Cannot activate a request
+|The request must be in `draft` or `approval` status. It may have already been activated, canceled, or expired.
+
+|Cannot cancel a request
+|The request must be in `draft`, `approval`, or `ongoing` status. Terminal states (`done`, `declined`, `expired`) cannot be canceled.
+
+|Cannot download documents
+|Documents are only available when the request is in `done` status. Check the status before attempting to download.
+
+|Webhook not receiving events
+|Verify the endpoint URL is publicly accessible over HTTPS. Check the webhook status in the Yousign dashboard.
+|===
+
+== FAQ
+
+*Can I use multiple templates in a single process?*
+
+Yes. Each Create From Template operation is independent. You can create multiple signature requests in the same process, each using a different template.
+
+*How do I handle multiple signers?*
+
+Use the `additionalSignersJson` input to add extra signers beyond the primary signer. Each additional signer needs a JSON object with `info` (first_name, last_name, email) and a `label` matching a template role.
+
+*What happens when a signer declines?*
+
+The signature request status transitions to `declined`. The Get Status operation will return `isTerminal=true` and `status=declined`. No documents are signed.
+
+*How long do signature requests stay valid?*
+
+By default, Yousign signature requests expire after 6 months. You can set a custom expiration date using the `expirationDate` parameter in Create From Template.
+
+*Can I use the connector in Bonita Community edition?*
+
+Yes. The connector is compatible with Bonita 10.2 Community (2024.3) and above. All operations work with both Community and Enterprise editions.
+
+*How do I switch from sandbox to production?*
+
+Change the `baseUrl` parameter from `https://api-sandbox.yousign.app/v3` to `https://api.yousign.app/v3` and use a production API key. No other changes are needed.
+
+*What is the maximum document size?*
+
+Yousign supports documents up to 20 MB. For larger documents, consider splitting them or compressing before upload.
+
+*How are documents returned?*
+
+Documents are returned as Base64-encoded strings. Use `java.util.Base64.getDecoder().decode()` in a Groovy script to convert them back to binary for storage as Bonita documents.
+
+== Source code
+
+The connector source code is available on GitHub: https://github.com/bonitasoft/bonita-connector-yousign[bonita-connector-yousign]
