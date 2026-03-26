@@ -42,6 +42,9 @@ jobs:
         with:
           keeper-secret-config: ${{ secrets.KSM_CONFIG }}
 
+      - name: Make Maven Wrapper executable
+        run: chmod +x mvnw
+
       - name: Build and test
         run: ./mvnw -B -ntp verify
 
@@ -51,5 +54,27 @@ jobs:
         with:
           report_paths: '**/target/*-reports/TEST-*.xml'
 
+      - name: Upload JaCoCo Coverage Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: jacoco-coverage-report
+          path: target/site/jacoco/
+          retention-days: 30
+
+      - name: Coverage Summary
+        if: always()
+        run: |
+          echo "## Coverage Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f target/site/jacoco/index.html ]; then
+            MISSED=$(grep -oP 'Total.*?</tfoot>' target/site/jacoco/index.html | grep -oP '\d+' | head -1 || echo "N/A")
+            COVERED=$(grep -oP 'Total.*?</tfoot>' target/site/jacoco/index.html | grep -oP '\d+' | head -2 | tail -1 || echo "N/A")
+            echo "Download the **jacoco-coverage-report** artifact for the full HTML report." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No JaCoCo report generated." >> $GITHUB_STEP_SUMMARY
+          fi
+
       - name: Publish Snapshots to Maven Central
+        if: contains(github.ref, 'develop') || contains(github.ref, 'support/')
         run: ./mvnw -B -ntp deploy -DskipTests
