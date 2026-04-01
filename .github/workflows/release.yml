@@ -34,7 +34,7 @@ jobs:
           event-type: new-connector-release
           client-payload: >-
             {
-              "artifactId": "CHANGE_ME",
+              "artifactId": "bonita-connector-yousign",
               "version": "${{ inputs.version }}",
-              "bonitaMinVersion": "CHANGE_ME"
+              "bonitaMinVersion": "10.2.0"
             }
