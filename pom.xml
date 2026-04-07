@@ -93,7 +93,7 @@
 		<yousign-register-webhook.main-class>com.bonitasoft.connectors.yousign.RegisterWebhookConnector</yousign-register-webhook.main-class>
 
 		<!-- Bonita -->
-		<bonita-common.version>10.2.0</bonita-common.version>
+		<bonita-common.version>10.4.5</bonita-common.version>
 
 		<!-- Connector dependencies -->
 		<lombok.version>1.18.30</lombok.version>
