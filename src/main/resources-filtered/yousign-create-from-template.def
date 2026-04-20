@@ -16,9 +16,10 @@
 
   <!-- Operation inputs -->
   <input name="requestName" type="java.lang.String" mandatory="true"/>
-  <input name="signerFirstName" type="java.lang.String" mandatory="true"/>
-  <input name="signerLastName" type="java.lang.String" mandatory="true"/>
-  <input name="signerEmail" type="java.lang.String" mandatory="true"/>
+  <!-- Signer identity fields are optional: provide signer data inside templateTextFieldsJson (template_placeholders.signers[]) per Yousign API v3. -->
+  <input name="signerFirstName" type="java.lang.String" mandatory="false"/>
+  <input name="signerLastName" type="java.lang.String" mandatory="false"/>
+  <input name="signerEmail" type="java.lang.String" mandatory="false"/>
   <input name="signerPhoneNumber" type="java.lang.String" mandatory="false"/>
   <input name="templateTextFieldsJson" type="java.lang.String" mandatory="false"/>
   <input name="additionalSignersJson" type="java.lang.String" mandatory="false"/>
@@ -26,7 +27,7 @@
 
   <!-- Configuration inputs -->
   <input name="templateId" type="java.lang.String" mandatory="true"/>
-  <input name="signerLabel" type="java.lang.String" mandatory="true"/>
+  <input name="signerLabel" type="java.lang.String" mandatory="false"/>
   <input name="signerLocale" type="java.lang.String" mandatory="false" defaultValue="fr"/>
   <input name="deliveryMode" type="java.lang.String" mandatory="false" defaultValue="email"/>
   <input name="orderedSigners" type="java.lang.Boolean" mandatory="false" defaultValue="false"/>

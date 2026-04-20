@@ -4,7 +4,7 @@
 
 Official Bonita connector for [Yousign](https://yousign.com/) eSignature API v3. Enables Bonita processes to create, manage, and track electronic signature requests.
 
-**Status:** BETA (1.0.0-beta.1)
+**Status:** BETA (1.0.1-beta.1)
 
 ## Operations
 
@@ -41,7 +41,7 @@ Official Bonita connector for [Yousign](https://yousign.com/) eSignature API v3.
 
 1. Build the project: `./mvnw install -DskipTests`
 2. In Bonita Studio, go to **Development > Connectors > Import connector...**
-3. Select the JAR file: `target/bonita-connector-yousign-1.0.0-beta.1.jar`
+3. Select the JAR file: `target/bonita-connector-yousign-1.0.1-beta.1.jar`
 4. The 8 Yousign operations will appear under the **Yousign** category
 
 ### Maven Coordinates
@@ -50,9 +50,53 @@ Official Bonita connector for [Yousign](https://yousign.com/) eSignature API v3.
 <dependency>
     <groupId>org.bonitasoft.connectors</groupId>
     <artifactId>bonita-connector-yousign</artifactId>
-    <version>1.0.0-beta.1</version>
+    <version>1.0.1-beta.1</version>
 </dependency>
 ```
+
+## Create From Template - Template placeholders
+
+Yousign API v3 requires that when `template_id` is used, all signer data and read-only text field values live inside a `template_placeholders` object. This connector exposes that object through the `templateTextFieldsJson` input (name kept for backward compatibility; contains the full placeholders object, not just text fields).
+
+Expected payload shape:
+
+```json
+{
+  "signers": [
+    {
+      "label": "policyHolder",
+      "info": {
+        "first_name": "Jane",
+        "last_name": "Doe",
+        "email": "jane.doe@example.com",
+        "locale": "en"
+      }
+    }
+  ],
+  "read_only_text_fields": [
+    { "label": "claim_id", "text": "SIN-2026-42" },
+    { "label": "amount",   "text": "1800" }
+  ]
+}
+```
+
+The `label` in each signer / read_only_text_field must match the placeholder label defined on the Yousign template. Signer identity inputs (`signerLabel`, `signerFirstName`, `signerLastName`, `signerEmail`) remain in the `.def` for informational use but are not part of the API payload and are no longer mandatory.
+
+Minimal Groovy expression for the input (single signer, no read-only fields):
+
+```groovy
+import groovy.json.JsonOutput
+
+return JsonOutput.toJson([
+    signers: [
+        [ label: "policyHolder",
+          info : [ first_name: "Jane", last_name: "Doe", email: "jane.doe@example.com", locale: "en" ] ]
+    ],
+    read_only_text_fields: []
+])
+```
+
+`POST /signature_requests` returns a signature request in `draft` status. Chain the **Activate** operation (passing the `signatureRequestId` output) on the same task or a downstream task to transition it to `ongoing` and trigger the signer email.
 
 ## Configuration
 
@@ -106,9 +150,9 @@ After building, the following artifacts are available in `target/`:
 
 | Artifact | Description |
 |----------|-------------|
-| `bonita-connector-yousign-1.0.0-beta.1.jar` | Main JAR for Bonita Studio import |
-| `bonita-connector-yousign-1.0.0-beta.1-all.zip` | All operations bundled |
-| `bonita-connector-yousign-1.0.0-beta.1-{operation}-impl.zip` | Individual operation ZIPs |
+| `bonita-connector-yousign-1.0.1-beta.1.jar` | Main JAR for Bonita Studio import |
+| `bonita-connector-yousign-1.0.1-beta.1-all.zip` | All operations bundled |
+| `bonita-connector-yousign-1.0.1-beta.1-{operation}-impl.zip` | Individual operation ZIPs |
 
 ## Technology Stack
 

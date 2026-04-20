@@ -32,10 +32,9 @@ class CreateFromTemplateConnectorTest {
         inputs.put("baseUrl", "https://api-sandbox.yousign.app/v3");
         inputs.put("templateId", "tmpl-123");
         inputs.put("requestName", "Test Request");
-        inputs.put("signerLabel", "Signer 1");
-        inputs.put("signerFirstName", "John");
-        inputs.put("signerLastName", "Doe");
-        inputs.put("signerEmail", "john@example.com");
+        // Signer identity moves to templateTextFieldsJson (template_placeholders.signers) in Yousign v3.
+        inputs.put("templateTextFieldsJson",
+                "{\"signers\":[{\"label\":\"signer1\",\"info\":{\"first_name\":\"John\",\"last_name\":\"Doe\",\"email\":\"john@example.com\"}}],\"read_only_text_fields\":[]}");
         return inputs;
     }
 
@@ -88,39 +87,15 @@ class CreateFromTemplateConnectorTest {
     }
 
     @Test
-    void should_fail_validation_when_signerLabel_missing() {
+    void should_pass_validation_when_signer_identity_fields_are_missing() throws Exception {
+        // signerLabel / signerFirstName / signerLastName / signerEmail are no longer mandatory.
         var inputs = validInputs();
         inputs.remove("signerLabel");
-        connector.setInputParameters(inputs);
-        assertThatThrownBy(() -> connector.validateInputParameters())
-                .isInstanceOf(ConnectorValidationException.class);
-    }
-
-    @Test
-    void should_fail_validation_when_signerFirstName_missing() {
-        var inputs = validInputs();
         inputs.remove("signerFirstName");
-        connector.setInputParameters(inputs);
-        assertThatThrownBy(() -> connector.validateInputParameters())
-                .isInstanceOf(ConnectorValidationException.class);
-    }
-
-    @Test
-    void should_fail_validation_when_signerLastName_missing() {
-        var inputs = validInputs();
         inputs.remove("signerLastName");
-        connector.setInputParameters(inputs);
-        assertThatThrownBy(() -> connector.validateInputParameters())
-                .isInstanceOf(ConnectorValidationException.class);
-    }
-
-    @Test
-    void should_fail_validation_when_signerEmail_missing() {
-        var inputs = validInputs();
         inputs.remove("signerEmail");
         connector.setInputParameters(inputs);
-        assertThatThrownBy(() -> connector.validateInputParameters())
-                .isInstanceOf(ConnectorValidationException.class);
+        connector.validateInputParameters(); // should not throw
     }
 
     @Test
@@ -225,42 +200,13 @@ class CreateFromTemplateConnectorTest {
     }
 
     @Test
-    void should_fail_validation_when_signerLabel_is_blank() {
+    void should_pass_validation_when_signer_identity_fields_are_blank() throws Exception {
         var inputs = validInputs();
         inputs.put("signerLabel", "   ");
-        connector.setInputParameters(inputs);
-        assertThatThrownBy(() -> connector.validateInputParameters())
-                .isInstanceOf(ConnectorValidationException.class)
-                .hasMessageContaining("signerLabel is mandatory");
-    }
-
-    @Test
-    void should_fail_validation_when_signerFirstName_is_blank() {
-        var inputs = validInputs();
         inputs.put("signerFirstName", "   ");
-        connector.setInputParameters(inputs);
-        assertThatThrownBy(() -> connector.validateInputParameters())
-                .isInstanceOf(ConnectorValidationException.class)
-                .hasMessageContaining("signerFirstName is mandatory");
-    }
-
-    @Test
-    void should_fail_validation_when_signerLastName_is_blank() {
-        var inputs = validInputs();
         inputs.put("signerLastName", "   ");
-        connector.setInputParameters(inputs);
-        assertThatThrownBy(() -> connector.validateInputParameters())
-                .isInstanceOf(ConnectorValidationException.class)
-                .hasMessageContaining("signerLastName is mandatory");
-    }
-
-    @Test
-    void should_fail_validation_when_signerEmail_is_blank() {
-        var inputs = validInputs();
         inputs.put("signerEmail", "   ");
         connector.setInputParameters(inputs);
-        assertThatThrownBy(() -> connector.validateInputParameters())
-                .isInstanceOf(ConnectorValidationException.class)
-                .hasMessageContaining("signerEmail is mandatory");
+        connector.validateInputParameters(); // should not throw
     }
 }

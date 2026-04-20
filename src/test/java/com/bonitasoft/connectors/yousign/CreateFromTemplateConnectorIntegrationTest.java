@@ -18,10 +18,11 @@ class CreateFromTemplateConnectorIntegrationTest {
         inputs.put("baseUrl", System.getenv().getOrDefault("YOUSIGN_BASE_URL", "https://api-sandbox.yousign.app/v3"));
         inputs.put("templateId", System.getenv("YOUSIGN_TEMPLATE_ID"));
         inputs.put("requestName", "Integration Test - " + System.currentTimeMillis());
-        inputs.put("signerLabel", System.getenv().getOrDefault("YOUSIGN_SIGNER_LABEL", "Signer"));
-        inputs.put("signerFirstName", "Test");
-        inputs.put("signerLastName", "User");
-        inputs.put("signerEmail", System.getenv().getOrDefault("YOUSIGN_SIGNER_EMAIL", "test@example.com"));
+        // Signer data goes inside template_placeholders.signers (Yousign v3 contract).
+        String signerLabel = System.getenv().getOrDefault("YOUSIGN_SIGNER_LABEL", "signer1");
+        String signerEmail = System.getenv().getOrDefault("YOUSIGN_SIGNER_EMAIL", "test@example.com");
+        inputs.put("templateTextFieldsJson",
+                "{\"signers\":[{\"label\":\"" + signerLabel + "\",\"info\":{\"first_name\":\"Test\",\"last_name\":\"User\",\"email\":\"" + signerEmail + "\",\"locale\":\"en\"}}],\"read_only_text_fields\":[]}");
         connector.setInputParameters(inputs);
         connector.validateInputParameters();
         connector.connect();

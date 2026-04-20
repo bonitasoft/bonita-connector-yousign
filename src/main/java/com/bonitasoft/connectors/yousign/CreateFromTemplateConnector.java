@@ -66,18 +66,8 @@ public class CreateFromTemplateConnector extends AbstractYousignConnector {
         if (config.getRequestName() == null || config.getRequestName().isBlank()) {
             throw new IllegalArgumentException("requestName is mandatory");
         }
-        if (config.getSignerLabel() == null || config.getSignerLabel().isBlank()) {
-            throw new IllegalArgumentException("signerLabel is mandatory");
-        }
-        if (config.getSignerFirstName() == null || config.getSignerFirstName().isBlank()) {
-            throw new IllegalArgumentException("signerFirstName is mandatory");
-        }
-        if (config.getSignerLastName() == null || config.getSignerLastName().isBlank()) {
-            throw new IllegalArgumentException("signerLastName is mandatory");
-        }
-        if (config.getSignerEmail() == null || config.getSignerEmail().isBlank()) {
-            throw new IllegalArgumentException("signerEmail is mandatory");
-        }
+        // signerLabel / signerFirstName / signerLastName / signerEmail are no longer mandatory:
+        // signer data is sourced from template_placeholders.signers (provided via templateTextFieldsJson).
     }
 
     @Override
