@@ -4,7 +4,7 @@
 
 Official Bonita connector for [Yousign](https://yousign.com/) eSignature API v3. Enables Bonita processes to create, manage, and track electronic signature requests.
 
-**Status:** BETA (1.0.1-beta.1)
+**Status:** BETA (1.0.0-beta.2)
 
 ## Operations
 
@@ -41,7 +41,7 @@ Official Bonita connector for [Yousign](https://yousign.com/) eSignature API v3.
 
 1. Build the project: `./mvnw install -DskipTests`
 2. In Bonita Studio, go to **Development > Connectors > Import connector...**
-3. Select the JAR file: `target/bonita-connector-yousign-1.0.1-beta.1.jar`
+3. Select the JAR file: `target/bonita-connector-yousign-1.0.0-beta.2.jar`
 4. The 8 Yousign operations will appear under the **Yousign** category
 
 ### Maven Coordinates
@@ -50,15 +50,15 @@ Official Bonita connector for [Yousign](https://yousign.com/) eSignature API v3.
 <dependency>
     <groupId>org.bonitasoft.connectors</groupId>
     <artifactId>bonita-connector-yousign</artifactId>
-    <version>1.0.1-beta.1</version>
+    <version>1.0.0-beta.2</version>
 </dependency>
 ```
 
 ## Create From Template - Template placeholders
 
-Yousign API v3 requires that when `template_id` is used, all signer data and read-only text field values live inside a `template_placeholders` object. This connector exposes that object through the `templateTextFieldsJson` input (name kept for backward compatibility; contains the full placeholders object, not just text fields).
+Yousign API v3 requires that when `template_id` is used, all signer data and read-only text field values live inside a `template_placeholders` object. This connector exposes that object through the **mandatory** `templatePlaceholdersJson` input. The shape is validated before sending, so a malformed payload fails fast with a Bonita error instead of an opaque 4xx from Yousign.
 
-Expected payload shape:
+Required shape:
 
 ```json
 {
@@ -80,7 +80,12 @@ Expected payload shape:
 }
 ```
 
-The `label` in each signer / read_only_text_field must match the placeholder label defined on the Yousign template. Signer identity inputs (`signerLabel`, `signerFirstName`, `signerLastName`, `signerEmail`) remain in the `.def` for informational use but are not part of the API payload and are no longer mandatory.
+The `label` in each signer / `read_only_text_field` must match the placeholder label defined on the Yousign template. The connector enforces:
+
+- The input is a JSON **object** (not an array, not a primitive).
+- The object contains a key named `signers`.
+- `signers` is an **array**.
+- The array is **non-empty**.
 
 Minimal Groovy expression for the input (single signer, no read-only fields):
 
@@ -97,6 +102,15 @@ return JsonOutput.toJson([
 ```
 
 `POST /signature_requests` returns a signature request in `draft` status. Chain the **Activate** operation (passing the `signatureRequestId` output) on the same task or a downstream task to transition it to `ongoing` and trigger the signer email.
+
+## Breaking changes from 1.0.0-beta.1
+
+> Read this if you already use the connector.
+
+- **`templateTextFieldsJson` renamed to `templatePlaceholdersJson`**. The old name implied "text fields" but the input always carried the full placeholders object including signers. The new name reflects that. Update any `.proc` mapping the old input.
+- **`templatePlaceholdersJson` is now mandatory** and its shape is validated (object with non-empty `signers` array). The `1.0.0-beta.1` version accepted blank values silently and produced opaque API 4xx errors at runtime.
+- **Removed inputs (silently ignored in 1.0.0-beta.1)**: `additionalSignersJson`, `signerLabel`, `signerFirstName`, `signerLastName`, `signerEmail`, `signerPhoneNumber`, `signerLocale`. None of these were forwarded to the API after the v3 migration. Pass signer data via `templatePlaceholdersJson.signers[]` instead.
+- **`yousign-activate` BETA status downgraded to `untested`**: there is no automated integration test exercising activate end-to-end yet. The operation works (manually validated against sandbox) but does not meet the bar for `validated`.
 
 ## Configuration
 
@@ -150,9 +164,9 @@ After building, the following artifacts are available in `target/`:
 
 | Artifact | Description |
 |----------|-------------|
-| `bonita-connector-yousign-1.0.1-beta.1.jar` | Main JAR for Bonita Studio import |
-| `bonita-connector-yousign-1.0.1-beta.1-all.zip` | All operations bundled |
-| `bonita-connector-yousign-1.0.1-beta.1-{operation}-impl.zip` | Individual operation ZIPs |
+| `bonita-connector-yousign-1.0.0-beta.2.jar` | Main JAR for Bonita Studio import |
+| `bonita-connector-yousign-1.0.0-beta.2-all.zip` | All operations bundled |
+| `bonita-connector-yousign-1.0.0-beta.2-{operation}-impl.zip` | Individual operation ZIPs |
 
 ## Technology Stack
 

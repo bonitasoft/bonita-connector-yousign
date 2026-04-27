@@ -36,22 +36,17 @@ class CreateFromTemplateConnectorPropertyTest {
     }
 
     @Property
-    void should_accept_blank_signer_identity_fields(
-            @ForAll("blankStrings") String signerLabel,
-            @ForAll("blankStrings") String signerFirstName,
-            @ForAll("blankStrings") String signerLastName,
-            @ForAll("blankStrings") String signerEmail) {
-        // Signer identity fields are optional since the connector relies on template_placeholders.signers.
+    void should_reject_blank_templatePlaceholdersJson(@ForAll("blankStrings") String placeholders) {
+        // templatePlaceholdersJson is now mandatory: signer data lives inside it.
         var config = YousignConfiguration.builder().apiKey("valid-key")
                 .baseUrl("https://api-sandbox.yousign.app/v3").templateId("tmpl-1")
                 .requestName("name")
-                .signerLabel(signerLabel)
-                .signerFirstName(signerFirstName)
-                .signerLastName(signerLastName)
-                .signerEmail(signerEmail)
+                .templatePlaceholdersJson(placeholders)
                 .build();
         var connector = new CreateFromTemplateConnector();
-        assertThatCode(() -> connector.validateConfiguration(config)).doesNotThrowAnyException();
+        assertThatThrownBy(() -> connector.validateConfiguration(config))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("templatePlaceholdersJson");
     }
 
     @Property
@@ -61,7 +56,9 @@ class CreateFromTemplateConnectorPropertyTest {
             @ForAll @net.jqwik.api.constraints.AlphaChars @StringLength(min = 1, max = 100) String requestName) {
         var config = YousignConfiguration.builder().apiKey(apiKey)
                 .baseUrl("https://api-sandbox.yousign.app/v3").templateId(templateId)
-                .requestName(requestName).build();
+                .requestName(requestName)
+                .templatePlaceholdersJson("{\"signers\":[{\"placeholder_name\":\"s1\"}]}")
+                .build();
         var connector = new CreateFromTemplateConnector();
         assertThatCode(() -> connector.validateConfiguration(config)).doesNotThrowAnyException();
     }

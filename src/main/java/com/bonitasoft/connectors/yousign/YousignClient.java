@@ -49,7 +49,10 @@ public class YousignClient {
      * {@code signers} and {@code read_only_text_fields}). Top-level signers[]
      * and the legacy "label" attribute on signers are rejected by the API.
      * The caller must provide the full placeholders object through
-     * {@link YousignConfiguration#getTemplateTextFieldsJson()}.
+     * {@link YousignConfiguration#getTemplatePlaceholdersJson()}. The shape is
+     * validated before sending: must be a JSON object with a non-empty signers
+     * array; otherwise the API returns an opaque "extra_arguments_not_allowed"
+     * or "missing required field" error that this validation pre-empts.
      */
     public CreateFromTemplateResult createFromTemplate(YousignConfiguration config) throws YousignException {
         return retryPolicy.execute(() -> {
@@ -69,13 +72,23 @@ public class YousignClient {
                 body.put("expiration_date", config.getExpirationDate());
             }
 
-            if (config.getTemplateTextFieldsJson() != null && !config.getTemplateTextFieldsJson().isBlank()) {
+            String placeholdersJson = config.getTemplatePlaceholdersJson();
+            if (placeholdersJson != null && !placeholdersJson.isBlank()) {
+                JsonNode placeholders;
                 try {
-                    JsonNode placeholders = objectMapper.readTree(config.getTemplateTextFieldsJson());
-                    body.set("template_placeholders", placeholders);
+                    placeholders = objectMapper.readTree(placeholdersJson);
                 } catch (JsonProcessingException e) {
-                    throw new YousignException("Invalid templateTextFieldsJson format: " + e.getMessage());
+                    throw new YousignException("Invalid templatePlaceholdersJson format: " + e.getMessage());
                 }
+                if (!placeholders.isObject()
+                        || !placeholders.has("signers")
+                        || !placeholders.path("signers").isArray()
+                        || placeholders.path("signers").isEmpty()) {
+                    throw new YousignException(
+                            "templatePlaceholdersJson must be a JSON object with a non-empty 'signers' array."
+                                    + " See README for the expected shape.");
+                }
+                body.set("template_placeholders", placeholders);
             }
 
             String jsonBody = objectMapper.writeValueAsString(body);

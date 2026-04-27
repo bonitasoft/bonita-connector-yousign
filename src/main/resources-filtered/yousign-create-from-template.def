@@ -15,20 +15,16 @@
   <input name="readTimeout" type="java.lang.Integer" mandatory="false" defaultValue="60000"/>
 
   <!-- Operation inputs -->
-  <input name="requestName" type="java.lang.String" mandatory="true"/>
-  <!-- Signer identity fields are optional: provide signer data inside templateTextFieldsJson (template_placeholders.signers[]) per Yousign API v3. -->
-  <input name="signerFirstName" type="java.lang.String" mandatory="false"/>
-  <input name="signerLastName" type="java.lang.String" mandatory="false"/>
-  <input name="signerEmail" type="java.lang.String" mandatory="false"/>
-  <input name="signerPhoneNumber" type="java.lang.String" mandatory="false"/>
-  <input name="templateTextFieldsJson" type="java.lang.String" mandatory="false"/>
-  <input name="additionalSignersJson" type="java.lang.String" mandatory="false"/>
-  <input name="externalId" type="java.lang.String" mandatory="false"/>
-
-  <!-- Configuration inputs -->
   <input name="templateId" type="java.lang.String" mandatory="true"/>
-  <input name="signerLabel" type="java.lang.String" mandatory="false"/>
-  <input name="signerLocale" type="java.lang.String" mandatory="false" defaultValue="fr"/>
+  <input name="requestName" type="java.lang.String" mandatory="true"/>
+  <!--
+       Per Yousign API v3, signer data and read-only text fields go inside
+       template_placeholders. Pass the full placeholders object as JSON, e.g.:
+       {"signers":[{"placeholder_name":"signer_1","info":{...}}],
+        "read_only_text_fields":[{"document_id":"...","field_name":"...","value":"..."}]}
+  -->
+  <input name="templatePlaceholdersJson" type="java.lang.String" mandatory="true"/>
+  <input name="externalId" type="java.lang.String" mandatory="false"/>
   <input name="deliveryMode" type="java.lang.String" mandatory="false" defaultValue="email"/>
   <input name="orderedSigners" type="java.lang.Boolean" mandatory="false" defaultValue="false"/>
   <input name="expirationDate" type="java.lang.String" mandatory="false"/>
@@ -47,27 +43,12 @@
     <widget xsi:type="definition:Text" id="readTimeoutWidget" inputName="readTimeout"/>
   </page>
   <page id="operationPage">
+    <widget xsi:type="definition:Text" id="templateIdWidget" inputName="templateId"/>
     <widget xsi:type="definition:Text" id="requestNameWidget" inputName="requestName"/>
-    <widget xsi:type="definition:Text" id="signerFirstNameWidget" inputName="signerFirstName"/>
-    <widget xsi:type="definition:Text" id="signerLastNameWidget" inputName="signerLastName"/>
-    <widget xsi:type="definition:Text" id="signerEmailWidget" inputName="signerEmail"/>
-    <widget xsi:type="definition:Text" id="signerPhoneNumberWidget" inputName="signerPhoneNumber"/>
-    <widget xsi:type="definition:TextArea" id="templateTextFieldsJsonWidget" inputName="templateTextFieldsJson"/>
-    <widget xsi:type="definition:TextArea" id="additionalSignersJsonWidget" inputName="additionalSignersJson"/>
+    <widget xsi:type="definition:TextArea" id="templatePlaceholdersJsonWidget" inputName="templatePlaceholdersJson"/>
     <widget xsi:type="definition:Text" id="externalIdWidget" inputName="externalId"/>
   </page>
   <page id="configurationPage">
-    <widget xsi:type="definition:Text" id="templateIdWidget" inputName="templateId"/>
-    <widget xsi:type="definition:Text" id="signerLabelWidget" inputName="signerLabel"/>
-    <widget xsi:type="definition:Select" id="signerLocaleWidget" inputName="signerLocale">
-      <items>fr</items>
-      <items>en</items>
-      <items>de</items>
-      <items>it</items>
-      <items>es</items>
-      <items>nl</items>
-      <items>pl</items>
-    </widget>
     <widget xsi:type="definition:RadioGroup" id="deliveryModeWidget" inputName="deliveryMode">
       <choices>email</choices>
       <choices>none</choices>

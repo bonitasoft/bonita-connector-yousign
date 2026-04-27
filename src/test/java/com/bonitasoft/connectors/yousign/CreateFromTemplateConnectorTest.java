@@ -32,8 +32,8 @@ class CreateFromTemplateConnectorTest {
         inputs.put("baseUrl", "https://api-sandbox.yousign.app/v3");
         inputs.put("templateId", "tmpl-123");
         inputs.put("requestName", "Test Request");
-        // Signer identity moves to templateTextFieldsJson (template_placeholders.signers) in Yousign v3.
-        inputs.put("templateTextFieldsJson",
+        // Signer identity moves to templatePlaceholdersJson (template_placeholders.signers) in Yousign v3.
+        inputs.put("templatePlaceholdersJson",
                 "{\"signers\":[{\"label\":\"signer1\",\"info\":{\"first_name\":\"John\",\"last_name\":\"Doe\",\"email\":\"john@example.com\"}}],\"read_only_text_fields\":[]}");
         return inputs;
     }
@@ -87,15 +87,14 @@ class CreateFromTemplateConnectorTest {
     }
 
     @Test
-    void should_pass_validation_when_signer_identity_fields_are_missing() throws Exception {
-        // signerLabel / signerFirstName / signerLastName / signerEmail are no longer mandatory.
+    void should_fail_validation_when_templatePlaceholdersJson_missing() {
+        // templatePlaceholdersJson is mandatory: signer data lives inside it.
         var inputs = validInputs();
-        inputs.remove("signerLabel");
-        inputs.remove("signerFirstName");
-        inputs.remove("signerLastName");
-        inputs.remove("signerEmail");
+        inputs.remove("templatePlaceholdersJson");
         connector.setInputParameters(inputs);
-        connector.validateInputParameters(); // should not throw
+        assertThatThrownBy(() -> connector.validateInputParameters())
+                .isInstanceOf(ConnectorValidationException.class)
+                .hasMessageContaining("templatePlaceholdersJson");
     }
 
     @Test
@@ -200,13 +199,12 @@ class CreateFromTemplateConnectorTest {
     }
 
     @Test
-    void should_pass_validation_when_signer_identity_fields_are_blank() throws Exception {
+    void should_fail_validation_when_templatePlaceholdersJson_is_blank() {
         var inputs = validInputs();
-        inputs.put("signerLabel", "   ");
-        inputs.put("signerFirstName", "   ");
-        inputs.put("signerLastName", "   ");
-        inputs.put("signerEmail", "   ");
+        inputs.put("templatePlaceholdersJson", "   ");
         connector.setInputParameters(inputs);
-        connector.validateInputParameters(); // should not throw
+        assertThatThrownBy(() -> connector.validateInputParameters())
+                .isInstanceOf(ConnectorValidationException.class)
+                .hasMessageContaining("templatePlaceholdersJson");
     }
 }

@@ -21,7 +21,7 @@ class CreateFromTemplateConnectorIntegrationTest {
         // Signer data goes inside template_placeholders.signers (Yousign v3 contract).
         String signerLabel = System.getenv().getOrDefault("YOUSIGN_SIGNER_LABEL", "signer1");
         String signerEmail = System.getenv().getOrDefault("YOUSIGN_SIGNER_EMAIL", "test@example.com");
-        inputs.put("templateTextFieldsJson",
+        inputs.put("templatePlaceholdersJson",
                 "{\"signers\":[{\"label\":\"" + signerLabel + "\",\"info\":{\"first_name\":\"Test\",\"last_name\":\"User\",\"email\":\"" + signerEmail + "\",\"locale\":\"en\"}}],\"read_only_text_fields\":[]}");
         connector.setInputParameters(inputs);
         connector.validateInputParameters();

@@ -20,14 +20,7 @@ public class CreateFromTemplateConnector extends AbstractYousignConnector {
     static final String INPUT_DELIVERY_MODE = "deliveryMode";
     static final String INPUT_ORDERED_SIGNERS = "orderedSigners";
     static final String INPUT_EXPIRATION_DATE = "expirationDate";
-    static final String INPUT_SIGNER_LABEL = "signerLabel";
-    static final String INPUT_SIGNER_FIRST_NAME = "signerFirstName";
-    static final String INPUT_SIGNER_LAST_NAME = "signerLastName";
-    static final String INPUT_SIGNER_EMAIL = "signerEmail";
-    static final String INPUT_SIGNER_PHONE_NUMBER = "signerPhoneNumber";
-    static final String INPUT_SIGNER_LOCALE = "signerLocale";
-    static final String INPUT_TEMPLATE_TEXT_FIELDS_JSON = "templateTextFieldsJson";
-    static final String INPUT_ADDITIONAL_SIGNERS_JSON = "additionalSignersJson";
+    static final String INPUT_TEMPLATE_PLACEHOLDERS_JSON = "templatePlaceholdersJson";
 
     // Output parameter name constants
     static final String OUTPUT_SIGNATURE_REQUEST_ID = "signatureRequestId";
@@ -46,14 +39,7 @@ public class CreateFromTemplateConnector extends AbstractYousignConnector {
                 .deliveryMode(readStringInput(INPUT_DELIVERY_MODE, "email"))
                 .orderedSigners(readBooleanInput(INPUT_ORDERED_SIGNERS, false))
                 .expirationDate(readStringInput(INPUT_EXPIRATION_DATE))
-                .signerLabel(readStringInput(INPUT_SIGNER_LABEL))
-                .signerFirstName(readStringInput(INPUT_SIGNER_FIRST_NAME))
-                .signerLastName(readStringInput(INPUT_SIGNER_LAST_NAME))
-                .signerEmail(readStringInput(INPUT_SIGNER_EMAIL))
-                .signerPhoneNumber(readStringInput(INPUT_SIGNER_PHONE_NUMBER))
-                .signerLocale(readStringInput(INPUT_SIGNER_LOCALE, "fr"))
-                .templateTextFieldsJson(readStringInput(INPUT_TEMPLATE_TEXT_FIELDS_JSON))
-                .additionalSignersJson(readStringInput(INPUT_ADDITIONAL_SIGNERS_JSON))
+                .templatePlaceholdersJson(readStringInput(INPUT_TEMPLATE_PLACEHOLDERS_JSON))
                 .build();
     }
 
@@ -66,8 +52,12 @@ public class CreateFromTemplateConnector extends AbstractYousignConnector {
         if (config.getRequestName() == null || config.getRequestName().isBlank()) {
             throw new IllegalArgumentException("requestName is mandatory");
         }
-        // signerLabel / signerFirstName / signerLastName / signerEmail are no longer mandatory:
-        // signer data is sourced from template_placeholders.signers (provided via templateTextFieldsJson).
+        if (config.getTemplatePlaceholdersJson() == null
+                || config.getTemplatePlaceholdersJson().isBlank()) {
+            throw new IllegalArgumentException(
+                    "templatePlaceholdersJson is mandatory. Pass a JSON object with a non-empty 'signers' array, "
+                    + "e.g. {\"signers\":[{\"placeholder_name\":\"signer_1\",\"info\":{...}}]}");
+        }
     }
 
     @Override

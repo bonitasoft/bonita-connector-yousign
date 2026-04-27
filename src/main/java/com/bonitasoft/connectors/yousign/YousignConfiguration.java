@@ -24,20 +24,19 @@ public class YousignConfiguration {
     private int readTimeout = 60000;
 
     // === Create From Template parameters ===
+    // Per Yousign API v3, signer data and read-only text fields go inside
+    // template_placeholders. The caller passes the full placeholders object
+    // through templatePlaceholdersJson (renamed from templateTextFieldsJson in
+    // 1.0.0-beta.1; the additionalSignersJson and signer* inputs were removed
+    // since they were ignored by the v3 code path — see breaking-change notes
+    // in the README).
     private String templateId;
     private String requestName;
     private String externalId;
     private String deliveryMode;
     private Boolean orderedSigners;
     private String expirationDate;
-    private String signerLabel;
-    private String signerFirstName;
-    private String signerLastName;
-    private String signerEmail;
-    private String signerPhoneNumber;
-    private String signerLocale;
-    private String templateTextFieldsJson;
-    private String additionalSignersJson;
+    private String templatePlaceholdersJson;
 
     // === Activate / Get Status / Cancel / Download parameters ===
     private String signatureRequestId;
