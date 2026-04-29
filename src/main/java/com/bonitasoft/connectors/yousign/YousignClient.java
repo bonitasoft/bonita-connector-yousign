@@ -3,7 +3,6 @@ package com.bonitasoft.connectors.yousign;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
@@ -44,6 +43,16 @@ public class YousignClient {
     /**
      * Create a signature request from a template.
      * POST /signature_requests
+     *
+     * Per Yousign API v3, when template_id is used, signer data and read-only
+     * text fields go inside template_placeholders (an object with keys
+     * {@code signers} and {@code read_only_text_fields}). Top-level signers[]
+     * and the legacy "label" attribute on signers are rejected by the API.
+     * The caller must provide the full placeholders object through
+     * {@code YousignConfiguration#getTemplatePlaceholdersJson()}. The shape is
+     * validated before sending: must be a JSON object with a non-empty signers
+     * array; otherwise the API returns an opaque "extra_arguments_not_allowed"
+     * or "missing required field" error that this validation pre-empts.
      */
     public CreateFromTemplateResult createFromTemplate(YousignConfiguration config) throws YousignException {
         return retryPolicy.execute(() -> {
@@ -63,49 +72,23 @@ public class YousignClient {
                 body.put("expiration_date", config.getExpirationDate());
             }
 
-            // Signers
-            ArrayNode signers = objectMapper.createArrayNode();
-            ObjectNode signer = objectMapper.createObjectNode();
-            ObjectNode info = objectMapper.createObjectNode();
-            info.put("first_name", config.getSignerFirstName());
-            info.put("last_name", config.getSignerLastName());
-            info.put("email", config.getSignerEmail());
-            if (config.getSignerPhoneNumber() != null && !config.getSignerPhoneNumber().isBlank()) {
-                info.put("phone_number", config.getSignerPhoneNumber());
-            }
-            if (config.getSignerLocale() != null && !config.getSignerLocale().isBlank()) {
-                info.put("locale", config.getSignerLocale());
-            }
-            signer.set("info", info);
-            signer.put("signature_level", "electronic_signature");
-            if (config.getSignerLabel() != null && !config.getSignerLabel().isBlank()) {
-                signer.put("label", config.getSignerLabel());
-            }
-            signers.add(signer);
-
-            // Additional signers
-            if (config.getAdditionalSignersJson() != null && !config.getAdditionalSignersJson().isBlank()) {
+            String placeholdersJson = config.getTemplatePlaceholdersJson();
+            if (placeholdersJson != null && !placeholdersJson.isBlank()) {
+                JsonNode placeholders;
                 try {
-                    JsonNode additionalSigners = objectMapper.readTree(config.getAdditionalSignersJson());
-                    if (additionalSigners.isArray()) {
-                        for (JsonNode additionalSigner : additionalSigners) {
-                            signers.add(additionalSigner);
-                        }
-                    }
+                    placeholders = objectMapper.readTree(placeholdersJson);
                 } catch (JsonProcessingException e) {
-                    throw new YousignException("Invalid additionalSignersJson format: " + e.getMessage());
+                    throw new YousignException("Invalid templatePlaceholdersJson format: " + e.getMessage());
                 }
-            }
-            body.set("signers", signers);
-
-            // Template text fields
-            if (config.getTemplateTextFieldsJson() != null && !config.getTemplateTextFieldsJson().isBlank()) {
-                try {
-                    JsonNode textFields = objectMapper.readTree(config.getTemplateTextFieldsJson());
-                    body.set("template_placeholders", textFields);
-                } catch (JsonProcessingException e) {
-                    throw new YousignException("Invalid templateTextFieldsJson format: " + e.getMessage());
+                if (!placeholders.isObject()
+                        || !placeholders.has("signers")
+                        || !placeholders.path("signers").isArray()
+                        || placeholders.path("signers").isEmpty()) {
+                    throw new YousignException(
+                            "templatePlaceholdersJson must be a JSON object with a non-empty 'signers' array."
+                                    + " See README for the expected shape.");
                 }
+                body.set("template_placeholders", placeholders);
             }
 
             String jsonBody = objectMapper.writeValueAsString(body);

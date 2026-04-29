@@ -2,6 +2,8 @@ package com.bonitasoft.connectors.yousign;
 
 import static org.assertj.core.api.Assertions.*;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -13,6 +15,21 @@ import java.io.IOException;
 import java.util.Base64;
 
 class YousignClientTest {
+
+    private static final ObjectMapper JSON = new ObjectMapper();
+
+    /**
+     * Parse the recorded body and assert that the given top-level field is
+     * absent. Reading the JSON tree is more robust than substring asserts
+     * which match nested fields (template_placeholders.signers contains the
+     * substring "signers" but is correct).
+     */
+    private static void assertBodyHasNoTopLevelField(String body, String field) throws Exception {
+        JsonNode root = JSON.readTree(body);
+        assertThat(root.has(field))
+                .as("body must NOT contain top-level field '%s' (body=%s)", field, body)
+                .isFalse();
+    }
 
     private MockWebServer mockServer;
     private YousignClient client;
@@ -50,9 +67,6 @@ class YousignClientTest {
                 .baseUrl(mockServer.url("/v3").toString().replaceAll("/$", ""))
                 .templateId("tmpl-1")
                 .requestName("Test")
-                .signerFirstName("John")
-                .signerLastName("Doe")
-                .signerEmail("john@example.com")
                 .maxRetries(0)
                 .build();
         var result = client.createFromTemplate(config);
@@ -67,14 +81,15 @@ class YousignClientTest {
         String body = request.getBody().readUtf8();
         assertThat(body).contains("\"template_id\":\"tmpl-1\"");
         assertThat(body).contains("\"name\":\"Test\"");
-        assertThat(body).contains("\"first_name\":\"John\"");
-        assertThat(body).contains("\"last_name\":\"Doe\"");
-        assertThat(body).contains("\"email\":\"john@example.com\"");
-        assertThat(body).contains("\"signature_level\":\"electronic_signature\"");
+        // Top-level signers[] is NOT built by the connector; signers come from template_placeholders.
+        // Using JSON parsing instead of substring asserts so a future field like 'signersCount'
+        // would not falsely make this test pass.
+        assertBodyHasNoTopLevelField(body, "signers");
+        assertBodyHasNoTopLevelField(body, "signature_level");
     }
 
     @Test
-    void should_create_from_template_with_all_optional_fields() throws Exception {
+    void should_create_from_template_with_all_top_level_fields() throws Exception {
         mockServer.enqueue(new MockResponse()
                 .setResponseCode(200)
                 .setBody("{\"id\":\"req-456\",\"status\":\"draft\"}")
@@ -89,12 +104,6 @@ class YousignClientTest {
                 .deliveryMode("email")
                 .orderedSigners(true)
                 .expirationDate("2026-12-31")
-                .signerFirstName("John")
-                .signerLastName("Doe")
-                .signerEmail("john@example.com")
-                .signerPhoneNumber("+33612345678")
-                .signerLocale("fr")
-                .signerLabel("Signer 1")
                 .maxRetries(0)
                 .build();
         var result = client.createFromTemplate(config);
@@ -106,9 +115,8 @@ class YousignClientTest {
         assertThat(body).contains("\"delivery_mode\":\"email\"");
         assertThat(body).contains("\"ordered_signers\":true");
         assertThat(body).contains("\"expiration_date\":\"2026-12-31\"");
-        assertThat(body).contains("\"phone_number\":\"+33612345678\"");
-        assertThat(body).contains("\"locale\":\"fr\"");
-        assertThat(body).contains("\"label\":\"Signer 1\"");
+        // Top-level signers[] must never appear: signers belong inside template_placeholders.
+        assertBodyHasNoTopLevelField(body, "signers");
     }
 
     @Test
@@ -123,11 +131,6 @@ class YousignClientTest {
                 .baseUrl(mockServer.url("/v3").toString().replaceAll("/$", ""))
                 .templateId("tmpl-1")
                 .requestName("Test")
-                .signerFirstName("John")
-                .signerLastName("Doe")
-                .signerEmail("john@example.com")
-                // externalId, deliveryMode, orderedSigners, expirationDate all null
-                // signerPhoneNumber, signerLocale, signerLabel all null
                 .maxRetries(0)
                 .build();
         var result = client.createFromTemplate(config);
@@ -137,7 +140,7 @@ class YousignClientTest {
         assertThat(body).doesNotContain("external_id");
         assertThat(body).doesNotContain("delivery_mode");
         assertThat(body).doesNotContain("expiration_date");
-        assertThat(body).doesNotContain("phone_number");
+        assertThat(body).doesNotContain("template_placeholders");
     }
 
     @Test
@@ -155,12 +158,7 @@ class YousignClientTest {
                 .externalId("   ")
                 .deliveryMode("  ")
                 .expirationDate("")
-                .signerFirstName("John")
-                .signerLastName("Doe")
-                .signerEmail("john@example.com")
-                .signerPhoneNumber("  ")
-                .signerLocale("")
-                .signerLabel("  ")
+                .templatePlaceholdersJson("   ")
                 .maxRetries(0)
                 .build();
         client.createFromTemplate(config);
@@ -169,106 +167,102 @@ class YousignClientTest {
         assertThat(body).doesNotContain("\"external_id\"");
         assertThat(body).doesNotContain("\"delivery_mode\"");
         assertThat(body).doesNotContain("\"expiration_date\"");
-        assertThat(body).doesNotContain("\"phone_number\"");
-        assertThat(body).doesNotContain("\"locale\"");
-        assertThat(body).doesNotContain("\"label\"");
+        assertThat(body).doesNotContain("template_placeholders");
     }
 
     @Test
-    void should_create_from_template_with_additional_signers() throws Exception {
-        mockServer.enqueue(new MockResponse()
-                .setResponseCode(200)
-                .setBody("{\"id\":\"req-add\",\"status\":\"draft\"}")
-                .addHeader("Content-Type", "application/json"));
-
-        var config = YousignConfiguration.builder()
-                .apiKey("key")
-                .baseUrl(mockServer.url("/v3").toString().replaceAll("/$", ""))
-                .templateId("tmpl-1")
-                .requestName("Test")
-                .signerFirstName("John")
-                .signerLastName("Doe")
-                .signerEmail("john@example.com")
-                .additionalSignersJson("[{\"info\":{\"first_name\":\"Jane\",\"last_name\":\"Roe\",\"email\":\"jane@example.com\"}}]")
-                .maxRetries(0)
-                .build();
-        var result = client.createFromTemplate(config);
-
-        assertThat(result.signatureRequestId()).isEqualTo("req-add");
-        String body = mockServer.takeRequest().getBody().readUtf8();
-        assertThat(body).contains("Jane");
-        assertThat(body).contains("jane@example.com");
-    }
-
-    @Test
-    void should_throw_on_invalid_additional_signers_json() {
-        mockServer.enqueue(new MockResponse().setResponseCode(200)
-                .setBody("{\"id\":\"x\",\"status\":\"y\"}")
-                .addHeader("Content-Type", "application/json"));
-
-        var config = YousignConfiguration.builder()
-                .apiKey("key")
-                .baseUrl(mockServer.url("/v3").toString().replaceAll("/$", ""))
-                .templateId("tmpl-1")
-                .requestName("Test")
-                .signerFirstName("John")
-                .signerLastName("Doe")
-                .signerEmail("john@example.com")
-                .additionalSignersJson("{invalid json")
-                .maxRetries(0)
-                .build();
-
-        assertThatThrownBy(() -> client.createFromTemplate(config))
-                .isInstanceOf(YousignException.class)
-                .hasMessageContaining("Invalid additionalSignersJson format");
-    }
-
-    @Test
-    void should_create_from_template_with_template_text_fields() throws Exception {
+    void should_create_from_template_with_template_placeholders_object() throws Exception {
         mockServer.enqueue(new MockResponse()
                 .setResponseCode(200)
                 .setBody("{\"id\":\"req-txt\",\"status\":\"draft\"}")
                 .addHeader("Content-Type", "application/json"));
 
+        String placeholders = "{\"signers\":[{\"label\":\"signer1\",\"info\":{\"first_name\":\"Jane\",\"last_name\":\"Roe\",\"email\":\"jane@example.com\",\"locale\":\"en\"}}],\"read_only_text_fields\":[{\"label\":\"company\",\"text\":\"Acme\"}]}";
         var config = YousignConfiguration.builder()
                 .apiKey("key")
                 .baseUrl(mockServer.url("/v3").toString().replaceAll("/$", ""))
                 .templateId("tmpl-1")
                 .requestName("Test")
-                .signerFirstName("John")
-                .signerLastName("Doe")
-                .signerEmail("john@example.com")
-                .templateTextFieldsJson("{\"company\":\"Acme\"}")
+                .templatePlaceholdersJson(placeholders)
                 .maxRetries(0)
                 .build();
         client.createFromTemplate(config);
 
         String body = mockServer.takeRequest().getBody().readUtf8();
         assertThat(body).contains("\"template_placeholders\"");
+        assertThat(body).contains("\"read_only_text_fields\"");
         assertThat(body).contains("Acme");
+        assertThat(body).contains("jane@example.com");
+        // The label must live inside template_placeholders.signers, not at top level.
+        assertThat(body).doesNotContain("\"signature_level\"");
     }
 
     @Test
-    void should_throw_on_invalid_template_text_fields_json() {
+    void should_throw_on_invalid_template_placeholders_json() {
         var config = YousignConfiguration.builder()
                 .apiKey("key")
                 .baseUrl(mockServer.url("/v3").toString().replaceAll("/$", ""))
                 .templateId("tmpl-1")
                 .requestName("Test")
-                .signerFirstName("John")
-                .signerLastName("Doe")
-                .signerEmail("john@example.com")
-                .templateTextFieldsJson("{broken json")
+                .templatePlaceholdersJson("{broken json")
                 .maxRetries(0)
                 .build();
 
         assertThatThrownBy(() -> client.createFromTemplate(config))
                 .isInstanceOf(YousignException.class)
-                .hasMessageContaining("Invalid templateTextFieldsJson format");
+                .hasMessageContaining("Invalid templatePlaceholdersJson format");
     }
 
     @Test
-    void should_not_include_template_text_fields_when_blank() throws Exception {
+    void should_throw_when_placeholders_is_array_instead_of_object() {
+        var config = YousignConfiguration.builder()
+                .apiKey("key")
+                .baseUrl(mockServer.url("/v3").toString().replaceAll("/$", ""))
+                .templateId("tmpl-1")
+                .requestName("Test")
+                .templatePlaceholdersJson("[]")
+                .maxRetries(0)
+                .build();
+
+        assertThatThrownBy(() -> client.createFromTemplate(config))
+                .isInstanceOf(YousignException.class)
+                .hasMessageContaining("non-empty 'signers' array");
+    }
+
+    @Test
+    void should_throw_when_placeholders_missing_signers_key() {
+        var config = YousignConfiguration.builder()
+                .apiKey("key")
+                .baseUrl(mockServer.url("/v3").toString().replaceAll("/$", ""))
+                .templateId("tmpl-1")
+                .requestName("Test")
+                .templatePlaceholdersJson("{\"foo\":\"bar\"}")
+                .maxRetries(0)
+                .build();
+
+        assertThatThrownBy(() -> client.createFromTemplate(config))
+                .isInstanceOf(YousignException.class)
+                .hasMessageContaining("non-empty 'signers' array");
+    }
+
+    @Test
+    void should_throw_when_placeholders_signers_is_empty_array() {
+        var config = YousignConfiguration.builder()
+                .apiKey("key")
+                .baseUrl(mockServer.url("/v3").toString().replaceAll("/$", ""))
+                .templateId("tmpl-1")
+                .requestName("Test")
+                .templatePlaceholdersJson("{\"signers\":[]}")
+                .maxRetries(0)
+                .build();
+
+        assertThatThrownBy(() -> client.createFromTemplate(config))
+                .isInstanceOf(YousignException.class)
+                .hasMessageContaining("non-empty 'signers' array");
+    }
+
+    @Test
+    void should_not_include_template_placeholders_when_blank() throws Exception {
         mockServer.enqueue(new MockResponse()
                 .setResponseCode(200)
                 .setBody("{\"id\":\"req-no-txt\",\"status\":\"draft\"}")
@@ -279,41 +273,13 @@ class YousignClientTest {
                 .baseUrl(mockServer.url("/v3").toString().replaceAll("/$", ""))
                 .templateId("tmpl-1")
                 .requestName("Test")
-                .signerFirstName("John")
-                .signerLastName("Doe")
-                .signerEmail("john@example.com")
-                .templateTextFieldsJson("  ")
+                .templatePlaceholdersJson("  ")
                 .maxRetries(0)
                 .build();
         client.createFromTemplate(config);
 
         String body = mockServer.takeRequest().getBody().readUtf8();
         assertThat(body).doesNotContain("template_placeholders");
-    }
-
-    @Test
-    void should_not_include_additional_signers_when_blank() throws Exception {
-        mockServer.enqueue(new MockResponse()
-                .setResponseCode(200)
-                .setBody("{\"id\":\"req-no-add\",\"status\":\"draft\"}")
-                .addHeader("Content-Type", "application/json"));
-
-        var config = YousignConfiguration.builder()
-                .apiKey("key")
-                .baseUrl(mockServer.url("/v3").toString().replaceAll("/$", ""))
-                .templateId("tmpl-1")
-                .requestName("Test")
-                .signerFirstName("John")
-                .signerLastName("Doe")
-                .signerEmail("john@example.com")
-                .additionalSignersJson("")
-                .maxRetries(0)
-                .build();
-        client.createFromTemplate(config);
-
-        // Should have only one signer in the array
-        String body = mockServer.takeRequest().getBody().readUtf8();
-        assertThat(body).contains("signers");
     }
 
     // === activate ===

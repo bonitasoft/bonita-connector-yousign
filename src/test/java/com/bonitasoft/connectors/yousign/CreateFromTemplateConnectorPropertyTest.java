@@ -19,8 +19,7 @@ class CreateFromTemplateConnectorPropertyTest {
     void should_reject_blank_templateId(@ForAll("blankStrings") String templateId) {
         var config = YousignConfiguration.builder().apiKey("valid-key")
                 .baseUrl("https://api-sandbox.yousign.app/v3").templateId(templateId)
-                .requestName("name").signerLabel("label").signerFirstName("fn")
-                .signerLastName("ln").signerEmail("e@e.com").build();
+                .requestName("name").build();
         var connector = new CreateFromTemplateConnector();
         assertThatThrownBy(() -> connector.validateConfiguration(config))
                 .isInstanceOf(IllegalArgumentException.class);
@@ -30,55 +29,24 @@ class CreateFromTemplateConnectorPropertyTest {
     void should_reject_blank_requestName(@ForAll("blankStrings") String requestName) {
         var config = YousignConfiguration.builder().apiKey("valid-key")
                 .baseUrl("https://api-sandbox.yousign.app/v3").templateId("tmpl-1")
-                .requestName(requestName).signerLabel("label").signerFirstName("fn")
-                .signerLastName("ln").signerEmail("e@e.com").build();
+                .requestName(requestName).build();
         var connector = new CreateFromTemplateConnector();
         assertThatThrownBy(() -> connector.validateConfiguration(config))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Property
-    void should_reject_blank_signerLabel(@ForAll("blankStrings") String signerLabel) {
+    void should_reject_blank_templatePlaceholdersJson(@ForAll("blankStrings") String placeholders) {
+        // templatePlaceholdersJson is now mandatory: signer data lives inside it.
         var config = YousignConfiguration.builder().apiKey("valid-key")
                 .baseUrl("https://api-sandbox.yousign.app/v3").templateId("tmpl-1")
-                .requestName("name").signerLabel(signerLabel).signerFirstName("fn")
-                .signerLastName("ln").signerEmail("e@e.com").build();
+                .requestName("name")
+                .templatePlaceholdersJson(placeholders)
+                .build();
         var connector = new CreateFromTemplateConnector();
         assertThatThrownBy(() -> connector.validateConfiguration(config))
-                .isInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Property
-    void should_reject_blank_signerFirstName(@ForAll("blankStrings") String signerFirstName) {
-        var config = YousignConfiguration.builder().apiKey("valid-key")
-                .baseUrl("https://api-sandbox.yousign.app/v3").templateId("tmpl-1")
-                .requestName("name").signerLabel("label").signerFirstName(signerFirstName)
-                .signerLastName("ln").signerEmail("e@e.com").build();
-        var connector = new CreateFromTemplateConnector();
-        assertThatThrownBy(() -> connector.validateConfiguration(config))
-                .isInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Property
-    void should_reject_blank_signerLastName(@ForAll("blankStrings") String signerLastName) {
-        var config = YousignConfiguration.builder().apiKey("valid-key")
-                .baseUrl("https://api-sandbox.yousign.app/v3").templateId("tmpl-1")
-                .requestName("name").signerLabel("label").signerFirstName("fn")
-                .signerLastName(signerLastName).signerEmail("e@e.com").build();
-        var connector = new CreateFromTemplateConnector();
-        assertThatThrownBy(() -> connector.validateConfiguration(config))
-                .isInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Property
-    void should_reject_blank_signerEmail(@ForAll("blankStrings") String signerEmail) {
-        var config = YousignConfiguration.builder().apiKey("valid-key")
-                .baseUrl("https://api-sandbox.yousign.app/v3").templateId("tmpl-1")
-                .requestName("name").signerLabel("label").signerFirstName("fn")
-                .signerLastName("ln").signerEmail(signerEmail).build();
-        var connector = new CreateFromTemplateConnector();
-        assertThatThrownBy(() -> connector.validateConfiguration(config))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("templatePlaceholdersJson");
     }
 
     @Property
@@ -88,8 +56,9 @@ class CreateFromTemplateConnectorPropertyTest {
             @ForAll @net.jqwik.api.constraints.AlphaChars @StringLength(min = 1, max = 100) String requestName) {
         var config = YousignConfiguration.builder().apiKey(apiKey)
                 .baseUrl("https://api-sandbox.yousign.app/v3").templateId(templateId)
-                .requestName(requestName).signerLabel("label").signerFirstName("fn")
-                .signerLastName("ln").signerEmail("e@e.com").build();
+                .requestName(requestName)
+                .templatePlaceholdersJson("{\"signers\":[{\"placeholder_name\":\"s1\"}]}")
+                .build();
         var connector = new CreateFromTemplateConnector();
         assertThatCode(() -> connector.validateConfiguration(config)).doesNotThrowAnyException();
     }

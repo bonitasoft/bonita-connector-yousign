@@ -6,7 +6,7 @@
 
 	<groupId>org.bonitasoft.connectors</groupId>
 	<artifactId>bonita-connector-yousign</artifactId>
-	<version>1.0.0-beta.1</version>
+	<version>1.0.0-beta.2</version>
 
 	<name>Bonita Yousign eSignature Connector</name>
 	<description>Yousign eSignature Connectors for Bonita</description>
@@ -433,6 +433,15 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
 				<version>${maven-javadoc-plugin.version}</version>
+				<configuration>
+					<!-- Java 17's javadoc tool promotes some "missing" warnings to
+					     errors. The connector contract surface is the .def files,
+					     not Java class members, so doclint skips the missing-tag
+					     check. Other doclint groups (html, syntax, reference)
+					     remain enforced so real Javadoc bugs still fail. -->
+					<doclint>all,-missing</doclint>
+					<failOnWarnings>false</failOnWarnings>
+				</configuration>
 				<executions>
 					<execution>
 						<id>attach-javadocs</id>
