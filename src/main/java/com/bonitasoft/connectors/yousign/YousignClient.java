@@ -49,7 +49,7 @@ public class YousignClient {
      * {@code signers} and {@code read_only_text_fields}). Top-level signers[]
      * and the legacy "label" attribute on signers are rejected by the API.
      * The caller must provide the full placeholders object through
-     * {@link YousignConfiguration#getTemplatePlaceholdersJson()}. The shape is
+     * {@code YousignConfiguration#getTemplatePlaceholdersJson()}. The shape is
      * validated before sending: must be a JSON object with a non-empty signers
      * array; otherwise the API returns an opaque "extra_arguments_not_allowed"
      * or "missing required field" error that this validation pre-empts.
