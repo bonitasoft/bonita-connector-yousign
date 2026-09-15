@@ -358,7 +358,12 @@ public class YousignClient {
         if (contentDisposition != null && contentDisposition.contains("filename=")) {
             String[] parts = contentDisposition.split("filename=");
             if (parts.length > 1) {
-                return parts[1].replace("\"", "").trim();
+                String value = parts[1];
+                int semicolon = value.indexOf(';');
+                if (semicolon >= 0) {
+                    value = value.substring(0, semicolon);
+                }
+                return value.replace("\"", "").trim();
             }
         }
         return defaultName;
