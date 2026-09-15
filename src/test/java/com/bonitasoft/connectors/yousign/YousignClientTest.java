@@ -1100,6 +1100,36 @@ class YousignClientTest {
         assertThat(result.documentName()).isEqualTo("report.pdf");
     }
 
+    @Test
+    void should_extract_filename_and_ignore_trailing_filename_star_parameter() throws Exception {
+        byte[] content = "DATA".getBytes();
+        // Real Youtrust/Yousign responses can carry both filename and the RFC 5987
+        // filename* parameter in the same header; only the first (quoted) name is a
+        // usable document name, the rest must not leak into the extracted value.
+        mockServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody(new okio.Buffer().write(content))
+                .addHeader("Content-Disposition",
+                        "attachment; filename=\"contract.pdf\"; filename*=utf-8''contract.pdf"));
+
+        var result = client.downloadDocument("req-123", "doc-1");
+        assertThat(result.documentName()).isEqualTo("contract.pdf");
+    }
+
+    @Test
+    void should_extract_audit_trail_filename_and_ignore_trailing_filename_star_parameter() throws Exception {
+        byte[] content = "AUDIT".getBytes();
+        mockServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody(new okio.Buffer().write(content))
+                .addHeader("Content-Disposition",
+                        "attachment; filename=\"Prueba conector real demo Talma - audit trail.pdf\"; "
+                                + "filename*=utf-8''Prueba%20conector%20real%20demo%20Talma%20-%20audit%20trail.pdf"));
+
+        var result = client.downloadAuditTrail("req-123", null);
+        assertThat(result.auditTrailName()).isEqualTo("Prueba conector real demo Talma - audit trail.pdf");
+    }
+
     // === Network error (IOException) ===
 
     @Test
